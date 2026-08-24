@@ -2257,6 +2257,29 @@ function visualTrain(root, mod){
   brakeGlow.position.set(0.62, -0.05, 0.5);
   scene.add(brakeGlow);
 
+  // a small procedural environment (sky gradient + two bright "window"
+  // panels), pre-filtered once into a real reflection map — this is what
+  // makes the metal parts read as metal instead of flat-shaded plastic;
+  // a one-time cost at scene build, not a per-frame one
+  (function addEnvironment(){
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envScene = new THREE.Scene();
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: { top:{value:new THREE.Color(0x6fa8dc)}, bottom:{value:new THREE.Color(0x030608)} },
+      vertexShader: 'varying vec3 vP; void main(){ vP=(modelMatrix*vec4(position,1.0)).xyz; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+      fragmentShader: 'varying vec3 vP; uniform vec3 top; uniform vec3 bottom; void main(){ float h=normalize(vP).y*0.5+0.5; gl_FragColor=vec4(mix(bottom,top,h),1.0); }',
+      side: THREE.BackSide
+    });
+    envScene.add(new THREE.Mesh(new THREE.SphereGeometry(40,12,12), skyMat));
+    const panel1 = new THREE.Mesh(new THREE.PlaneGeometry(8,4), new THREE.MeshBasicMaterial({color:0x9fd8ff}));
+    panel1.position.set(-9,4,-5); panel1.lookAt(0,0,0); envScene.add(panel1);
+    const panel2 = new THREE.Mesh(new THREE.PlaneGeometry(5,2.5), new THREE.MeshBasicMaterial({color:0xffb36b}));
+    panel2.position.set(7,1.5,-4); panel2.lookAt(0,0,0); envScene.add(panel2);
+    const rt = pmrem.fromScene(envScene, 0.035);
+    scene.environment = rt.texture;
+    pmrem.dispose();
+  })();
+
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(24,10), new THREE.ShadowMaterial({opacity:0.32}));
   ground.rotation.x = -Math.PI/2; ground.position.y = -0.42; ground.receiveShadow = true;
   scene.add(ground);
@@ -2274,11 +2297,33 @@ function visualTrain(root, mod){
     t.castShadow = true; t.receiveShadow = true;
     scene.add(t);
   }
-  const railMat = new THREE.MeshStandardMaterial({color:0x8fa2b3, metalness:0.92, roughness:0.2});
-  const railGeo = new THREE.BoxGeometry(9.2,0.08,0.07);
+  // real rail cross-section (foot / web / rounded head), extruded along
+  // the track's length — a flat box read as a plastic slat; this reads as
+  // an actual I-profile steel rail like the reference photo
+  const railMat = new THREE.MeshStandardMaterial({color:0x9fb0bf, metalness:0.95, roughness:0.16});
+  function makeRailGeometry(length){
+    const fw=0.045, fh=0.012, ww=0.011, wh=0.045, hw=0.021, hh=0.058;
+    const shape = new THREE.Shape();
+    shape.moveTo(-fw,0);
+    shape.lineTo(fw,0);
+    shape.lineTo(fw,fh);
+    shape.lineTo(ww,wh);
+    shape.lineTo(hw,wh);
+    shape.lineTo(hw,hh);
+    shape.quadraticCurveTo(0,hh+0.008,-hw,hh);
+    shape.lineTo(-ww,wh);
+    shape.lineTo(-fw,fh);
+    shape.lineTo(-fw,0);
+    const geo = new THREE.ExtrudeGeometry(shape, {depth:length, bevelEnabled:false, curveSegments:6});
+    geo.translate(0,0,-length/2);
+    geo.rotateY(Math.PI/2);
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const railGeo = makeRailGeometry(9.2);
   [0.42,-0.42].forEach(z=>{
     const r = new THREE.Mesh(railGeo, railMat);
-    r.position.set(0,-0.22,z); r.castShadow = true; r.receiveShadow = true;
+    r.position.set(0,-0.238,z); r.castShadow = true; r.receiveShadow = true;
     scene.add(r);
   });
   // the short rail segment where the brake unit acts — subtly highlighted
@@ -2347,24 +2392,32 @@ function visualTrain(root, mod){
   trim.position.set(-0.05, 0.14, 0);
   trainGroup.add(trim);
 
-  // real train wheel: outer tread + inner web + lighter hub cap + a ring of
-  // lug bolts, instead of a plain disc — matches the reference photo's
-  // machined-metal wheel instead of a flat cylinder
-  const wheelMat = new THREE.MeshStandardMaterial({color:0x1c2430, metalness:0.72, roughness:0.3});
-  const hubMat = new THREE.MeshStandardMaterial({color:0x8695a2, metalness:0.85, roughness:0.2});
+  // real train wheel: a single lathe-revolved profile (hub → web → tread
+  // → flange), the same technique real wheel CAD models use, instead of
+  // three stacked flat cylinders — plus a lighter hub cap and lug bolts
+  const wheelMat = new THREE.MeshStandardMaterial({color:0x232c38, metalness:0.85, roughness:0.22});
+  const hubMat = new THREE.MeshStandardMaterial({color:0x9aa8b5, metalness:0.88, roughness:0.16});
   const boltMat = new THREE.MeshStandardMaterial({color:0x3a4450, metalness:0.8, roughness:0.28});
-  const treadGeo = new THREE.CylinderGeometry(0.24,0.24,0.075,26); treadGeo.rotateX(Math.PI/2);
-  const webGeo = new THREE.CylinderGeometry(0.165,0.165,0.09,22); webGeo.rotateX(Math.PI/2);
-  const hubGeo = new THREE.CylinderGeometry(0.055,0.055,0.11,16); hubGeo.rotateX(Math.PI/2);
+  const wheelProfile = [
+    [0.000,0.000],[0.050,0.000],[0.050,0.018],[0.150,0.030],[0.155,0.050],
+    [0.235,0.058],[0.240,0.090],[0.235,0.098],[0.265,0.108],[0.250,0.120],
+    [0.040,0.135],[0.000,0.135]
+  ].map(([r,y])=> new THREE.Vector2(r,y));
+  const wheelGeo = new THREE.LatheGeometry(wheelProfile, 28);
+  wheelGeo.translate(0,-0.0675,0);
+  wheelGeo.rotateX(Math.PI/2);
+  wheelGeo.computeVertexNormals();
+  const hubGeo = new THREE.CylinderGeometry(0.052,0.052,0.014,20); hubGeo.rotateX(Math.PI/2);
   const boltGeo = new THREE.CylinderGeometry(0.013,0.013,0.02,8); boltGeo.rotateX(Math.PI/2);
   function makeWheel(x, z){
     const g = new THREE.Group();
     [z, -z].forEach(zz=>{
       const wg = new THREE.Group();
-      const tread = new THREE.Mesh(treadGeo, wheelMat); tread.castShadow = true; tread.receiveShadow = true;
-      wg.add(tread);
-      wg.add(new THREE.Mesh(webGeo, wheelMat));
-      wg.add(new THREE.Mesh(hubGeo, hubMat));
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat); wheel.castShadow = true; wheel.receiveShadow = true;
+      wg.add(wheel);
+      const hubCap = new THREE.Mesh(hubGeo, hubMat);
+      hubCap.position.z = 0.048;
+      wg.add(hubCap);
       for(let i=0;i<6;i++){
         const a = (i/6)*Math.PI*2;
         const bolt = new THREE.Mesh(boltGeo, boltMat);
