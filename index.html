@@ -214,6 +214,16 @@ body.ui-hidden #main-row{grid-template-columns: 0px 1fr 0px;}
    flyouts (5 rows tall) too little room and ran them off the bottom edge. */
 .rail.rail-tools{border-inline-start:1px solid var(--border-soft);}
 body.nav-collapsed .rail-nav, body.tools-collapsed .rail-tools, body.ui-hidden .rail{opacity:0;pointer-events:none;}
+.rail-expand-tab{
+  display:none;position:absolute;z-index:23;top:50%;inset-inline-end:0;transform:translateY(-50%);
+  width:26px;height:56px;border-radius:10px 0 0 10px;
+  background:linear-gradient(180deg, rgba(7,14,24,.85), rgba(7,14,24,.65));
+  border:1px solid var(--border-soft);border-inline-end:none;
+  color:var(--text-secondary);align-items:center;justify-content:center;cursor:pointer;
+}
+.rail-expand-tab svg{width:16px;height:16px;}
+body.nav-collapsed .rail-expand-tab{display:flex;}
+body.ui-hidden .rail-expand-tab{display:none;}
 .rail-group{display:flex;flex-direction:column;gap:calc(var(--rail-btn) * .143);align-items:center;}
 .rail-spacer{flex:1;}
 
@@ -353,17 +363,6 @@ body.question-mode .qa-hint{display:flex;}
 .lz-arrow{color:var(--text-muted);font-size:14px;}
 .lz-caption{min-height:20px;font-size:13px;color:var(--accent-2);margin-top:4px;}
 
-.why-btn{position:absolute;top:18px;inset-inline-end:18px;display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);background:var(--surface-1);border:1px solid var(--border-soft);padding:8px 14px;border-radius:100px;z-index:6;transition:all var(--motion-fast);}
-.why-btn:hover{border-color:var(--border-active);color:var(--accent);}
-.why-popover{
-  position:absolute;top:60px;inset-inline-end:18px;max-width:300px;z-index:7;
-  background:var(--surface-3);border:1px solid var(--border-active);border-radius:var(--radius-md);
-  padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.5);
-  opacity:0;transform:translateY(-6px);pointer-events:none;transition:all var(--motion-fast) var(--ease-ui);
-}
-.why-popover.open{opacity:1;transform:translateY(0);pointer-events:auto;}
-.why-popover b{display:block;color:var(--accent);font-size:12px;margin-bottom:8px;}
-.why-popover p{font-size:14px;color:var(--text-secondary);line-height:1.7;}
 
 .module-nav-btns{display:flex;gap:12px;flex:0 0 auto;padding-top:14px;margin-top:8px;border-top:1px solid var(--border-soft);}
 .nav-step-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;border-radius:14px;background:var(--surface-1);border:1px solid var(--border-soft);font-size:var(--fs-control);color:var(--text-secondary);transition:all var(--motion-fast);}
@@ -439,7 +438,7 @@ body.question-mode .qa-hint{display:flex;}
 /* =========================================================================
    FOCUS / ANNOTATION / LASER
    ========================================================================= */
-body.focus-mode .rail,body.focus-mode header.app-header,body.focus-mode .footer-bar,body.focus-mode .scene-panel,body.focus-mode .why-btn{opacity:0!important;pointer-events:none!important;}
+body.focus-mode .rail,body.focus-mode header.app-header,body.focus-mode .footer-bar,body.focus-mode .scene-panel{opacity:0!important;pointer-events:none!important;}
 .focus-exit-hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:50;font-size:13px;color:var(--text-secondary);background:var(--surface-2);border:1px solid var(--border-soft);padding:8px 16px;border-radius:100px;opacity:0;transition:opacity var(--motion-standard);pointer-events:none;}
 body.focus-mode .focus-exit-hint{opacity:1;}
 
@@ -532,6 +531,14 @@ body.laser-active{cursor:none;}
   </header>
 
   <div id="main-row">
+    <!-- Re-expand tab: the only control that toggled the nav rail closed
+         (#nav-collapse) lives INSIDE that same rail, so once collapsed it
+         disappears along with it, leaving no way back in. This sits outside
+         the rail (absolutely positioned, out of grid flow) and only shows
+         while collapsed. -->
+    <button id="rail-nav-expand" class="rail-expand-tab" title="إظهار الشريط" aria-label="إظهار الشريط">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
     <!-- Navigation rail — DOM-first so RTL grid places it at the right edge, per spec -->
     <nav class="rail rail-nav" aria-label="التنقل الرئيسي">
       <div class="rail-group">
@@ -730,7 +737,7 @@ const CONTENT = [
   qas:[{
     q:'اشرح نشاطًا توضّح فيه كيفية تقليل تأثير التيارات الدوامة المتولدة في الموصلات.',
     a:[
-      '**أدوات النشاط:** بندولان متماثلان، كل منهما مصنوع من مادة فيرومغناطيسية ليست الألمنيوم مثلًا، مثبّتة بطرف ساق خفيفة من المادة نفسها. إحدى الصفيحتين مقطعة بشكل قطع معزولة عن بعضها مثل أسنان المشط، والأخرى غير مقطعة. مغناطيس دائمي قوي، وحامل.',
+      '**أدوات النشاط:** بندولان متماثلان، كل منهما مصنوع من مادة فيرومغناطيسية من الألمنيوم مثلًا، مثبّتة بطرف ساق خفيفة من المادة نفسها. إحدى الصفيحتين مقطعة بشكل قطع معزولة عن بعضها مثل أسنان المشط، والأخرى غير مقطعة. مغناطيس دائمي قوي، وحامل.',
       '**خطوات النشاط:** نُزيح الصفيحتين بإزاحة متساوية إلى أحد جانبي موقع استقرارهما، ثم نتركهما في آن واحد لتهتز كل منهما بحرية بين قطبي المغناطيس.',
       'نجد أن البندول الذي يتألف من الصفيحة الكاملة (غير المقطعة) يتوقف عن الحركة سريعًا أثناء مروره بين قطبي المغناطيس، في حين تستمر الصفيحة المقطعة بشكل أسنان المشط بالاهتزاز ذهابًا وإيابًا، ولكن باهتزاز يتناقص تدريجيًا وباستمرار أطول.',
       '**الاستنتاج:** تتولّد تيارات دوامة كبيرة المقدار في الصفيحة غير المقطعة أثناء حركتها داخل المجال المغناطيسي، وتكون معاكسة الاتجاه (وفقًا لقانون فاراداي ولنز) لسبب حركتها، وتسبّب مجالًا مغناطيسيًا محتثًا معرقلًا لاتجاه حركة الصفيحة، فتتلاشى سعة اهتزازها بسرعة وتتوقف عن الاهتزاز وفقًا لقانون لنز.',
@@ -1042,7 +1049,7 @@ function buildFlyouts(){
   });
 
   const appFly = document.getElementById('flyout-applications');
-  [['m9','مجالات الاستعمال'],['m10','مكابح القطارات'],['m11','كاشفات المعادن']].forEach(([id,label])=>{
+  [['m9','مجالات الاستعمال'],['m10','مكابح القطارات'],['m11','كاشفات المعادن'],['signals','الإشارات الضوئية']].forEach(([id,label])=>{
     const b = el('button','flyout-item', appFly);
     b.dataset.id=id; b.textContent = label;
     b.addEventListener('click', ()=>{ SceneManager.go(id); closeFlyouts(); });
@@ -1072,7 +1079,7 @@ function closeFlyouts(){ document.querySelectorAll('.flyout').forEach(f=>f.class
 document.addEventListener('click', closeFlyouts);
 
 /* =========================================================================
-   SHARED SCENE-CHROME BUILDER (question panel, reveal, stepper, why-btn)
+   SHARED SCENE-CHROME BUILDER (question panel, reveal, stepper)
    ========================================================================= */
 function buildTeachingScene(container, moduleData, visualBuilder){
   container.classList.add('teaching-scene');
@@ -1117,12 +1124,6 @@ function buildTeachingScene(container, moduleData, visualBuilder){
   nextBtn.style.visibility = idx<CONTENT.length-1 ? 'visible':'hidden';
   prevBtn.addEventListener('click', ()=> idx>0 && SceneManager.go(CONTENT[idx-1].id));
   nextBtn.addEventListener('click', ()=> idx<CONTENT.length-1 && SceneManager.go(CONTENT[idx+1].id));
-
-  const whyBtn = el('button','why-btn', visual);
-  whyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-1 .5-1.5 1-1.5 2.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>لماذا؟</span>`;
-  const whyPop = el('div','why-popover', visual);
-  whyPop.innerHTML = `<b>توضيح بصري</b><p>${moduleData.why || 'راقب كيف يولّد تغيّر الفيض تيارًا مغلقًا داخل المعدن، وكيف يعاكس هذا التيار سببه وفقًا لقانون لنز.'}</p>`;
-  whyBtn.addEventListener('click', ()=> whyPop.classList.toggle('open'));
 
   const api = visualBuilder ? visualBuilder(visual, moduleData) : null;
   container.__panel = panel;
@@ -1300,6 +1301,26 @@ function mkFieldLabel(host, text, color, top, left){
   l.style.top = top; l.style.left = left;
   l.innerHTML = `<span class="dot" style="background:${color}"></span><span>${text}</span>`;
   return l;
+}
+// Shared speed-selector row — writes the same global state.animationSpeed
+// the "حركة بطيئة" rail tool and animEngine's frame loop already use, so a
+// speed picked in any one scene stays in effect everywhere else too.
+function buildSpeedRow(host, speeds){
+  const row = el('div', null, host);
+  row.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;';
+  const buttons = speeds.map(v=>{
+    const b = el('button', null, row);
+    b.textContent = v+'×';
+    b.style.cssText='min-width:52px;min-height:44px;border-radius:10px;background:var(--surface-1);border:1px solid var(--border-soft);color:var(--text-secondary);font-size:13px;transition:all var(--motion-fast);';
+    b.addEventListener('click', ()=>{
+      buttons.forEach(x=>{ x.style.color='var(--text-secondary)'; x.style.borderColor='var(--border-soft)'; });
+      b.style.color='var(--accent)'; b.style.borderColor='var(--border-active)';
+      state.animationSpeed = v;
+    });
+    if(v===state.animationSpeed){ b.style.color='var(--accent)'; b.style.borderColor='var(--border-active)'; }
+    return b;
+  });
+  return row;
 }
 
 /* ---- M2/M3/M4: shared Laminated Core Lab (solid vs laminated) ---- */
@@ -2055,18 +2076,7 @@ function buildPendulumScene(root, opts={}){
   const traceBtn = ctrlBtn('إظهار المسار','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20c4-10 12-10 16-16" stroke-dasharray="2 3"/></svg>');
   const graphBtn = ctrlBtn('الرسم البياني','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"/></svg>');
 
-  const speedRow = el('div', null, root);
-  speedRow.style.cssText='display:flex;gap:8px;align-items:center;';
-  ['0.25×','0.5×','1×'].forEach(label=>{
-    const b = el('button', null, speedRow);
-    b.textContent = label;
-    b.style.cssText='min-width:56px;min-height:44px;border-radius:10px;background:var(--surface-1);border:1px solid var(--border-soft);color:var(--text-secondary);font-size:13px;';
-    b.addEventListener('click', ()=>{
-      speedRow.querySelectorAll('button').forEach(x=>x.style.color='var(--text-secondary)');
-      b.style.color='var(--accent)';
-      state.animationSpeed = parseFloat(label);
-    });
-  });
+  buildSpeedRow(root, [0.25,0.5,1,2,3]);
 
   function clearTraces(){ pA.tracePts=[]; pB.tracePts=[]; pA.traceMat.opacity=0; pB.traceMat.opacity=0; }
   playBtn.addEventListener('click', ()=>{
@@ -2095,8 +2105,8 @@ function buildPendulumScene(root, opts={}){
   graphBtn.addEventListener('click', ()=>{ graphOverlay.style.display = graphOverlay.style.display==='none'?'block':'none'; });
 
   const labelsHost = el('div', null, wrap); labelsHost.style.cssText='position:absolute;inset:0;pointer-events:none;';
-  const capA = mkFieldLabel(labelsHost,'صفيحة كاملة','#ffb36b','86%','58%');
-  const capB = mkFieldLabel(labelsHost,'صفيحة مقطعة','#7cf2c4','86%','8%');
+  const capA = mkFieldLabel(labelsHost,'صفيحة كاملة','#ffb36b','86%','8%');
+  const capB = mkFieldLabel(labelsHost,'صفيحة مقطعة','#7cf2c4','86%','58%');
   capA.classList.toggle('show', state.showLabels); capB.classList.toggle('show', state.showLabels);
 
   return {
@@ -2193,7 +2203,7 @@ function visualApplications(root, mod){
   const items = [
     {t:'مكابح القطارات الحديثة',s:'ذات الوسائد الهوائية', target:'m10', icon:trainIcon()},
     {t:'كاشفات المعادن',s:'نقاط التفتيش الأمنية والمطارات', target:'m11', icon:detectorIcon()},
-    {t:'الإشارات الضوئية',s:'السيطرة على تقاطعات الطرق', target:'m11', icon:signalIcon()},
+    {t:'الإشارات الضوئية',s:'السيطرة على تقاطعات الطرق', target:'signals', icon:signalIcon()},
     {t:'الخريطة المفاهيمية',s:'كل المجالات في مخطط واحد', target:'conceptmap', icon:mapIcon()},
   ];
   items.forEach(it=>{
@@ -2561,8 +2571,8 @@ function visualTrain(root, mod){
   const ro = new ResizeObserver(resize);
   ro.observe(wrap);
 
-  const TRACK_MIN = -1.5, TRACK_MAX = 1.3;
-  let trainX = TRACK_MIN, speed = 0.72, braking = false, wheelRot = 0, pulseT = 0;
+  const TRACK_MIN = -1.5, TRACK_MAX = 1.3, TRAIN_BASE_SPEED = 1.15;
+  let trainX = TRACK_MIN, speed = TRAIN_BASE_SPEED, braking = false, wheelRot = 0, pulseT = 0;
   function frame(dt){
     if(braking) speed *= Math.pow(SIM.trainDecel, dt*60);
     trainX += speed*dt*60*0.012;
@@ -2574,7 +2584,7 @@ function visualTrain(root, mod){
     wheel1.children.forEach(wg=> wg.rotation.z = wheelRot);
     wheel2.children.forEach(wg=> wg.rotation.z = wheelRot);
 
-    const activeStrength = braking ? clamp(speed/0.72, 0.1, 1) : 0;
+    const activeStrength = braking ? clamp(speed/TRAIN_BASE_SPEED, 0.1, 1) : 0;
     pulseT += dt*3.2;
     const pulse = 0.75 + 0.25*Math.sin(pulseT);
 
@@ -2648,7 +2658,9 @@ function visualTrain(root, mod){
   resetBtn2.style.cssText='min-height:56px;padding:0 22px;font-size:14px;';
   resetBtn2.textContent='إعادة الضبط';
   brakeBtn.addEventListener('click', ()=>{ if(braking) return; braking = true; playBrakeSound(); });
-  resetBtn2.addEventListener('click', ()=>{ braking=false; speed=0.72; trainX=TRACK_MIN; });
+  resetBtn2.addEventListener('click', ()=>{ braking=false; speed=TRAIN_BASE_SPEED; trainX=TRACK_MIN; });
+
+  buildSpeedRow(root, [0.5,1,2,3]);
 
   const timelineWrap = el('div', null, root);
   timelineWrap.style.cssText='display:flex;gap:26px;font-size:12.5px;color:var(--text-muted);flex-wrap:wrap;justify-content:center;';
@@ -2656,8 +2668,8 @@ function visualTrain(root, mod){
 
   return {
     syncToggles(){},
-    reset(){ braking=false; speed=0.72; trainX=TRACK_MIN; },
-    replay(){ braking=false; speed=0.72; trainX=TRACK_MIN; },
+    reset(){ braking=false; speed=TRAIN_BASE_SPEED; trainX=TRACK_MIN; },
+    replay(){ braking=false; speed=TRAIN_BASE_SPEED; trainX=TRACK_MIN; },
   };
 }
 
@@ -2995,6 +3007,225 @@ SceneManager.register({
 });
 
 /* =========================================================================
+   EXTRA APPLICATION SCENE: smart traffic signals (inductive-loop detector)
+   Not in the source booklet — the booklet only names this as a second use
+   of metal-detector technology in one sentence (see M11's own answer text).
+   Added on explicit teacher request as a realistic 3D illustration of that
+   same sentence; qualitative only, same no-fake-data policy as every other
+   scene: no invented sensitivity numbers, just the induction mechanism.
+   ========================================================================= */
+SceneManager.register({
+  id:'signals', num:null, title:'تطبيق: الإشارات الضوئية الذكية', group:'application', el:null, built:false,
+  build(container){
+    container.classList.add('teaching-scene');
+    const visual = el('div','scene-visual', container);
+    const panel = el('div','scene-panel', container);
+    el('div','module-tag', panel).textContent='تطبيق إضافي — رسم توضيحي غير وارد حرفيًا في المصدر';
+    el('h2','scene-h1', panel).textContent='كيف تكتشف الإشارة الضوئية السيارات؟';
+    const p = el('p', null, panel); p.style.cssText='color:var(--text-secondary);font-size:16px;line-height:1.9;';
+    p.textContent = 'يذكر المصدر أنّ كاشفات المعادن تُستعمل أيضًا للسيطرة على الإشارات الضوئية في بعض تقاطعات الطرق. هذا الرسم يوضّح الفكرة نفسها تفاعليًا: حلقة سلك مدفونة تحت سطح الطريق تعمل بمبدأ مشابه لكاشف المعادن — فعند مرور جسم السيارة المعدني فوقها يتغيّر المجال المغناطيسي للحلقة، فتكتشف دارة التحكم هذا التغيّر وتُشغّل الإشارة الخضراء.';
+    container.__api = buildSignalsScene(visual);
+  },
+  enter(){ this.el.__api?.reset?.(); },
+});
+function buildSignalsScene(root){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  const wrap = el('div', null, root);
+  wrap.style.cssText='width:min(60vw,760px);aspect-ratio:16/9;position:relative;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.5);';
+  const canvas = el('canvas', null, wrap);
+  canvas.style.cssText='display:block;width:100%;height:100%;';
+
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.25;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x081321, 10, 22);
+
+  const camera = new THREE.PerspectiveCamera(34, 16/9, 0.1, 100);
+  camera.position.set(2.3, 1.5, 3.3);
+  camera.lookAt(0.2, 0.35, 0.25);
+
+  scene.add(new THREE.HemisphereLight(0x8fc4ea, 0x0a1420, 1.0));
+  const keyLight = new THREE.DirectionalLight(0x9fd8ff, 2.2);
+  keyLight.position.set(-3, 5, 3);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(1024,1024);
+  keyLight.shadow.camera.near=1; keyLight.shadow.camera.far=18;
+  keyLight.shadow.camera.left=-5; keyLight.shadow.camera.right=5;
+  keyLight.shadow.camera.top=5; keyLight.shadow.camera.bottom=-5;
+  scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0xbfe6ff, 0.9);
+  fillLight.position.set(3,1.5,2);
+  scene.add(fillLight);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.ShadowMaterial({opacity:0.3}));
+  ground.rotation.x=-Math.PI/2; ground.position.y=-0.42; ground.receiveShadow=true;
+  scene.add(ground);
+
+  // road slab
+  const roadMat = new THREE.MeshStandardMaterial({color:0x272b32, metalness:0.05, roughness:0.92});
+  const road = new THREE.Mesh(new THREE.BoxGeometry(3.0,0.1,7.0), roadMat);
+  road.position.y=-0.05; road.receiveShadow=true;
+  scene.add(road);
+  const laneMat = new THREE.MeshStandardMaterial({color:0xdfe6ec, metalness:0.1, roughness:0.6, emissive:0x333333, emissiveIntensity:0.15});
+  for(let i=0;i<10;i++){
+    const dash = new THREE.Mesh(new THREE.BoxGeometry(0.06,0.012,0.32), laneMat);
+    dash.position.set(0, 0.006, -3.1+i*0.7);
+    road.add(dash);
+  }
+
+  // buried inductive loop — a rounded rectangle outline recessed into the
+  // road surface, the sensing element itself
+  const loopMat = new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0.55});
+  const loopGroup = new THREE.Group();
+  loopGroup.position.set(0, 0.008, 0);
+  road.add(loopGroup);
+  const LOOP_W=1.7, LOOP_D=1.0;
+  [[LOOP_W,0.03,0, LOOP_D/2],[LOOP_W,0.03,0,-LOOP_D/2]].forEach(([w,h,x,z])=>{
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(w,0.012,h), loopMat);
+    seg.position.set(x,0,z); loopGroup.add(seg);
+  });
+  [[0.02,LOOP_D+0.03, LOOP_W/2,0],[0.02,LOOP_D+0.03,-LOOP_W/2,0]].forEach(([w,d,x,z])=>{
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(w,0.012,d), loopMat);
+    seg.position.set(x,0,z); loopGroup.add(seg);
+  });
+
+  // induction glow filling the loop when a vehicle is detected
+  const fieldMat = new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0});
+  const fieldFill = new THREE.Mesh(new THREE.PlaneGeometry(LOOP_W-0.1, LOOP_D-0.1), fieldMat);
+  fieldFill.rotation.x=-Math.PI/2; fieldFill.position.set(0,0.01,0);
+  road.add(fieldFill);
+  const pulseRingGeo = new THREE.TorusGeometry(0.12,0.012,8,24);
+  const pulseRings=[];
+  for(let i=0;i<3;i++){
+    const m = new THREE.MeshBasicMaterial({color:0x8fe3ff, transparent:true, opacity:0});
+    const ring = new THREE.Mesh(pulseRingGeo, m);
+    ring.rotation.x=-Math.PI/2; ring.position.set(0,0.02,0);
+    road.add(ring);
+    pulseRings.push({mesh:ring, mat:m, phase:i/3});
+  }
+
+  // signal pole + head (red / yellow / green)
+  const poleMat = new THREE.MeshStandardMaterial({color:0x2b333c, metalness:0.6, roughness:0.4});
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1.9,14), poleMat);
+  pole.position.set(1.55,0.53,0.9); pole.castShadow=true;
+  scene.add(pole);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.55,10), poleMat);
+  arm.rotation.z=Math.PI/2; arm.position.set(1.28,1.44,0.9);
+  scene.add(arm);
+  const headMat = new THREE.MeshStandardMaterial({color:0x1a1e24, metalness:0.5, roughness:0.5});
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.42,0.16), headMat);
+  head.position.set(0.98,1.44,0.9); head.castShadow=true;
+  scene.add(head);
+  const lampGeo = new THREE.SphereGeometry(0.052,14,14);
+  const redMat = new THREE.MeshStandardMaterial({color:0x3a0f0f, emissive:0xff4d4d, emissiveIntensity:1.4});
+  const yellowMat = new THREE.MeshStandardMaterial({color:0x332a05, emissive:0xffb36b, emissiveIntensity:0});
+  const greenMat = new THREE.MeshStandardMaterial({color:0x0d2a16, emissive:0x3ddc84, emissiveIntensity:0});
+  const lampRed = new THREE.Mesh(lampGeo, redMat); lampRed.position.set(0.98,1.56,0.9); scene.add(lampRed);
+  const lampYellow = new THREE.Mesh(lampGeo, yellowMat); lampYellow.position.set(0.98,1.44,0.9); scene.add(lampYellow);
+  const lampGreen = new THREE.Mesh(lampGeo, greenMat); lampGreen.position.set(0.98,1.32,0.9); scene.add(lampGreen);
+  const signalGlow = new THREE.PointLight(0xff4d4d, 1.1, 2);
+  signalGlow.position.set(0.98,1.5,0.9);
+  scene.add(signalGlow);
+
+  // the car — a simple, clean sedan silhouette, not a boxy toy block
+  const carGroup = new THREE.Group(); scene.add(carGroup);
+  const carMat = new THREE.MeshStandardMaterial({color:0xb3432f, metalness:0.55, roughness:0.35});
+  const lower = new THREE.Mesh(new THREE.BoxGeometry(0.62,0.18,1.15), carMat);
+  lower.position.y=0.13; lower.castShadow=true; lower.receiveShadow=true;
+  carGroup.add(lower);
+  const cabinMat = new THREE.MeshStandardMaterial({color:0x0e1826, metalness:0.3, roughness:0.25});
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.16,0.62), cabinMat);
+  cabin.position.set(0,0.28,-0.05); cabin.castShadow=true;
+  carGroup.add(cabin);
+  const wheelMatC = new THREE.MeshStandardMaterial({color:0x161a1f, metalness:0.5, roughness:0.5});
+  const wGeo = new THREE.CylinderGeometry(0.1,0.1,0.06,14);
+  [[0.28,0.42],[0.28,-0.42],[-0.28,0.42],[-0.28,-0.42]].forEach(([x,z])=>{
+    const wm = new THREE.Mesh(wGeo, wheelMatC); wm.rotation.z=Math.PI/2;
+    wm.position.set(x,0.1,z); wm.castShadow=true;
+    carGroup.add(wm);
+  });
+
+  carGroup.scale.setScalar(1.3);
+  const CAR_Z_START=-2.4, CAR_Z_END=2.4;
+  carGroup.position.set(0.42, 0, CAR_Z_START);
+
+  function resize(){
+    const w=wrap.clientWidth, h=wrap.clientHeight; if(!w||!h) return;
+    renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+  resize();
+  const ro = new ResizeObserver(resize); ro.observe(wrap);
+
+  let driving=false, detected=false, carZ=CAR_Z_START, pulseT=0, signalT=0;
+  function inLoop(z){ return Math.abs(z) < LOOP_D/2 + 0.15; }
+  function frame(dt){
+    if(driving){
+      carZ += dt*1.15;
+      if(carZ>CAR_Z_END){ carZ=CAR_Z_END; driving=false; }
+      carGroup.position.z = carZ;
+    }
+    const nowDetected = driving && inLoop(carZ);
+    if(nowDetected && !detected) signalT = 0;
+    detected = nowDetected;
+
+    pulseT += dt*3;
+    fieldMat.opacity = detected ? (state.showField ? 0.28+0.12*Math.sin(pulseT*2) : 0) : 0;
+    for(const pr of pulseRings){
+      const cyc = detected ? ((pulseT*0.6 - pr.phase) % 1 + 1) % 1 : 0;
+      pr.mesh.scale.setScalar(0.3 + cyc*2.2);
+      pr.mat.opacity = detected && state.showCurrents ? (0.5*(1-cyc)) : 0;
+    }
+
+    signalT += dt;
+    // green stays on for a short window after the detection edge, then
+    // returns to red — a simple, readable on/off cue, not a timed traffic
+    // program (this scene illustrates detection, not signal-phase logic)
+    const showGreen = detected || (!driving && signalT<1.6 && carZ>=CAR_Z_END);
+    redMat.emissiveIntensity = showGreen ? 0.05 : 1.4;
+    greenMat.emissiveIntensity = showGreen ? 1.5 : 0;
+    signalGlow.color.set(showGreen ? 0x3ddc84 : 0xff4d4d);
+    signalGlow.intensity = showGreen ? 1.0 : 1.1;
+
+    syncLabelsVisible();
+    renderer.render(scene, camera);
+  }
+  animEngine.ticks.push(guardTick(root, frame));
+
+  const controls = el('div', null, root);
+  controls.style.cssText='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;';
+  const driveBtn = el('button','btn-primary-lg', controls);
+  driveBtn.style.cssText='min-height:56px;padding:0 26px;font-size:16px;';
+  driveBtn.innerHTML='<span>تشغيل السيارة</span>';
+  const resetBtn3 = el('button','btn-secondary-lg', controls);
+  resetBtn3.style.cssText='min-height:56px;padding:0 22px;font-size:14px;';
+  resetBtn3.textContent='إعادة الضبط';
+  function resetScene(){ driving=false; detected=false; carZ=CAR_Z_START; carGroup.position.z=carZ; signalT=0; }
+  driveBtn.addEventListener('click', ()=>{ if(driving) return; resetScene(); driving=true; });
+  resetBtn3.addEventListener('click', resetScene);
+
+  const labelsHost = el('div', null, wrap); labelsHost.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  const lblLoop = mkFieldLabel(labelsHost,'حلقة استشعار مدفونة','#61D8FF','78%','58%');
+  const lblField = mkFieldLabel(labelsHost,'تغيّر المجال عند مرور السيارة','#8fe3ff','58%','30%');
+  function syncLabelsVisible(){
+    lblLoop.classList.toggle('show', state.showLabels);
+    lblField.classList.toggle('show', state.showField && detected);
+  }
+  syncLabelsVisible();
+
+  return {
+    syncToggles(){ syncLabelsVisible(); },
+    reset: resetScene,
+    replay(){ resetScene(); driving=true; },
+  };
+}
+
+/* =========================================================================
    TOOLBAR WIRING (teaching tools rail)
    ========================================================================= */
 function toggleRailBtn(id, key, onChange){
@@ -3036,6 +3267,10 @@ slowBtn.addEventListener('click', ()=>{
 
 const questionBtn = document.getElementById('tool-question');
 questionBtn.addEventListener('click', ()=>{
+  // question mode is always forced on in student view (see setTeacherMode)
+  // so students can't use this same button to switch answers back on —
+  // only the teacher's own toggle should have that effect
+  if(!state.teacherMode) return;
   state.questionMode = !state.questionMode;
   questionBtn.classList.toggle('active', state.questionMode);
   document.body.classList.toggle('question-mode', state.questionMode);
@@ -3078,20 +3313,41 @@ document.getElementById('nav-collapse').addEventListener('click', ()=>{
   state.navCollapsed = !state.navCollapsed;
   document.body.classList.toggle('nav-collapsed', state.navCollapsed);
 });
+document.getElementById('rail-nav-expand').addEventListener('click', ()=>{
+  state.navCollapsed = false;
+  document.body.classList.remove('nav-collapsed');
+});
+
+/* Home button */
+document.getElementById('nav-home').addEventListener('click', ()=> SceneManager.go('home'));
 
 /* Teacher / Student mode */
+// The teacher's own question-mode preference, preserved across a trip
+// through student mode (which always forces question-mode on) so
+// switching back to teacher view restores exactly what the teacher had
+// set, instead of leaking student view's forced-on state permanently.
+let teacherQuestionModePref = false;
 function setTeacherMode(isTeacher){
   state.teacherMode = isTeacher;
   document.getElementById('btn-teacher-mode').classList.toggle('active', isTeacher);
   document.getElementById('btn-student-mode').classList.toggle('active', !isTeacher);
   document.getElementById('btn-teacher-mode').setAttribute('aria-selected', isTeacher);
   document.getElementById('btn-student-mode').setAttribute('aria-selected', !isTeacher);
-  document.body.classList.toggle('question-mode', !isTeacher || state.questionMode);
-  document.querySelectorAll('.rail-tools .rail-btn').forEach((b,i)=>{
-    // in student view, hide most authoring tools except pause/reset feel — keep it simple & robust:
-  });
-  document.querySelector('.rail-tools').style.opacity = isTeacher ? '' : (state.navCollapsed?0:1);
-  document.querySelector('.rail-tools').style.pointerEvents = isTeacher ? '' : (isTeacher?'auto':'none');
+  // student mode hides the inline per-question "كشف الإجابة" buttons and
+  // auto-arms the single rail "إظهار الإجابة" tool in their place, so
+  // students always have a way to check their own answers — the tools
+  // rail itself stays fully visible/usable in both modes (it previously
+  // got its pointer-events force-disabled here, which silently broke
+  // every tool, reveal-answer included, the moment student mode turned on)
+  if(!isTeacher){
+    teacherQuestionModePref = state.questionMode;
+    state.questionMode = true;
+  } else {
+    state.questionMode = teacherQuestionModePref;
+  }
+  document.getElementById('tool-question').classList.toggle('active', state.questionMode);
+  document.body.classList.toggle('question-mode', state.questionMode);
+  document.getElementById('tool-reveal-answer').style.display = state.questionMode ? 'flex' : 'none';
   if(!isTeacher){
     document.body.classList.add('question-mode-student-hint');
     document.querySelectorAll('.scene-panel .module-nav-btns').forEach(b=> b.style.display = isTeacher?'':'none');
