@@ -101,7 +101,11 @@ body.reduced-motion .bg-drift, body.reduced-motion .bg-twinkle{animation:none!im
     linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 55%, #030509 100%);
 }
 #cosmic-bg canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.85;}
-.bg-haze{position:absolute;border-radius:50%;filter:blur(60px);opacity:.28;mix-blend-mode:screen;}
+/* No filter:blur() here — these move continuously (animation below), and an
+   animated blur filter must be recomposited every frame, which is expensive
+   and flicker-prone on weak/embedded GPUs. The radial-gradient's own
+   "transparent 70%" fade already gives a soft haze edge for free. */
+.bg-haze{position:absolute;border-radius:50%;opacity:.28;mix-blend-mode:screen;}
 .bg-haze.h1{width:46vw;height:46vw;background:radial-gradient(circle,#2c6fa8,transparent 70%);top:-14%;right:-8%;animation:driftA 46s ease-in-out infinite;}
 .bg-haze.h2{width:38vw;height:38vw;background:radial-gradient(circle,#1c4e6b,transparent 70%);bottom:-16%;left:-6%;animation:driftB 60s ease-in-out infinite;}
 .bg-haze.h3{width:26vw;height:26vw;background:radial-gradient(circle,#3a8fae,transparent 70%);top:38%;left:22%;animation:driftA 70s ease-in-out infinite reverse;}
@@ -121,9 +125,12 @@ header.app-header{
   height:var(--header-h);flex:0 0 auto;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;gap:16px;
-  background:linear-gradient(180deg, rgba(6,12,22,.7), rgba(6,12,22,.15));
+  /* Solid gradient instead of backdrop-filter: blurring a bar that sits over a
+     continuously-animated background is expensive to recomposite every frame
+     and flickers on weak/embedded GPUs (interactive touch panels). A slightly
+     more opaque gradient reads just as "glassy" without that cost. */
+  background:linear-gradient(180deg, rgba(6,12,22,.94), rgba(6,12,22,.8));
   border-bottom:1px solid var(--border-soft);
-  backdrop-filter:blur(14px);
   transition:transform var(--motion-standard) var(--ease-ui), opacity var(--motion-standard) var(--ease-ui);
   z-index:20;
 }
@@ -203,7 +210,7 @@ body.nav-collapsed .rail-nav, body.tools-collapsed .rail-tools, body.ui-hidden .
 .flyout{
   position:absolute;top:0;left:calc(100% + 10px);right:auto;
   background:var(--surface-3);border:1px solid var(--border-soft);border-radius:var(--radius-md);
-  padding:10px;min-width:220px;backdrop-filter:blur(20px);
+  padding:10px;min-width:220px;
   box-shadow:0 20px 50px rgba(0,0,0,.5);
   opacity:0;transform:translateX(10px);pointer-events:none;
   transition:opacity var(--motion-fast) var(--ease-ui), transform var(--motion-fast) var(--ease-ui);
@@ -226,8 +233,9 @@ body.nav-collapsed .rail-nav, body.tools-collapsed .rail-tools, body.ui-hidden .
 .footer-bar{
   position:relative;z-index:20;
   flex:0 0 auto;height:var(--timeline-h);display:flex;align-items:center;justify-content:center;gap:14px;
-  padding:0 24px;background:linear-gradient(0deg, rgba(6,12,22,.65), rgba(6,12,22,.1));
-  border-top:1px solid var(--border-soft);backdrop-filter:blur(10px);
+  /* see header.app-header note above: solid gradient instead of backdrop-filter */
+  padding:0 24px;background:linear-gradient(0deg, rgba(6,12,22,.92), rgba(6,12,22,.72));
+  border-top:1px solid var(--border-soft);
   transition:transform var(--motion-standard) var(--ease-ui), opacity var(--motion-standard) var(--ease-ui);
 }
 body.ui-hidden .footer-bar{transform:translateY(120%);opacity:0;pointer-events:none;}
@@ -306,7 +314,7 @@ body.question-mode .qa-hint{display:flex;}
 .why-popover{
   position:absolute;top:60px;inset-inline-end:18px;max-width:300px;z-index:7;
   background:var(--surface-3);border:1px solid var(--border-active);border-radius:var(--radius-md);
-  padding:16px;backdrop-filter:blur(20px);box-shadow:0 20px 50px rgba(0,0,0,.5);
+  padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.5);
   opacity:0;transform:translateY(-6px);pointer-events:none;transition:all var(--motion-fast) var(--ease-ui);
 }
 .why-popover.open{opacity:1;transform:translateY(0);pointer-events:auto;}
@@ -395,7 +403,7 @@ body.focus-mode .focus-exit-hint{opacity:1;}
    reachable at all times even while annotate mode is active. */
 #annotate-canvas{position:fixed;inset:0;z-index:10;pointer-events:none;display:none;}
 body.annotate-active #annotate-canvas{display:block;pointer-events:auto;cursor:crosshair;}
-.annotate-toolbar{position:fixed;bottom:calc(var(--timeline-h) + 18px);left:50%;transform:translateX(-50%) translateY(20px);z-index:25;display:flex;gap:8px;background:var(--surface-3);border:1px solid var(--border-active);padding:8px;border-radius:16px;backdrop-filter:blur(20px);opacity:0;pointer-events:none;transition:all var(--motion-standard) var(--ease-spring);box-shadow:0 20px 50px rgba(0,0,0,.5);}
+.annotate-toolbar{position:fixed;bottom:calc(var(--timeline-h) + 18px);left:50%;transform:translateX(-50%) translateY(20px);z-index:25;display:flex;gap:8px;background:var(--surface-3);border:1px solid var(--border-active);padding:8px;border-radius:16px;opacity:0;pointer-events:none;transition:all var(--motion-standard) var(--ease-spring);box-shadow:0 20px 50px rgba(0,0,0,.5);}
 body.annotate-active .annotate-toolbar{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
 .annotate-toolbar button{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:var(--text-secondary);background:transparent;}
 .annotate-toolbar button.active{background:rgba(97,216,255,.18);color:var(--accent);}
@@ -1134,7 +1142,10 @@ function visualInduction(root, mod){
   root.style.cssText='position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
   const wrap = el('div', null, root);
   wrap.style.cssText='width:min(46vw,560px);position:relative;';
-  const svg = svgEl('svg',{viewBox:'0 0 480 420', style:'width:100%;height:auto;filter:drop-shadow(0 20px 40px rgba(0,0,0,.4))'}, wrap);
+  // No filter:drop-shadow here — this SVG's particles mutate every frame while
+  // the scene is active, and a filter on the whole SVG forces it to be
+  // re-rendered on every one of those updates, which is costly on weak GPUs.
+  const svg = svgEl('svg',{viewBox:'0 0 480 420', style:'width:100%;height:auto;'}, wrap);
 
   // magnet poles
   svgEl('rect',{x:60,y:20,width:360,height:34,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
@@ -1532,7 +1543,7 @@ function buildPendulumScene(root, opts={}){
 
   // graph overlay (qualitative amplitude decay)
   const graphOverlay = el('div', null, root);
-  graphOverlay.style.cssText='position:absolute;top:16px;inset-inline-start:16px;width:260px;background:var(--surface-3);border:1px solid var(--border-soft);border-radius:14px;padding:14px;display:none;backdrop-filter:blur(16px);';
+  graphOverlay.style.cssText='position:absolute;top:16px;inset-inline-start:16px;width:260px;background:var(--surface-3);border:1px solid var(--border-soft);border-radius:14px;padding:14px;display:none;';
   graphOverlay.innerHTML = `<div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;">تناقص السعة (نوعي)</div>`;
   const gsvg = svgEl('svg',{viewBox:'0 0 220 100', style:'width:100%;height:auto;'});
   graphOverlay.appendChild(gsvg);
