@@ -1243,12 +1243,34 @@ function visualInduction(root, mod){
   svgEl('stop',{offset:'100%','stop-color':'#8a4a26'},grad);
 
   const fieldG = svgEl('g',{}, svg);
-  buildFieldLines(svg, fieldG, {x0:90,x1:390,y0:60,y1:360,count:6,dir:1});
+  const fieldLines = buildFieldLines(svg, fieldG, {x0:90,x1:390,y0:60,y1:360,count:6,dir:1});
   setGroupVisible(fieldG, state.showField);
 
   const eddyG = svgEl('g',{}, svg);
-  buildEddyLoops(svg, eddyG, {cx:240,cy:210,baseR:58,count:3,dir:1});
+  const eddyLoops = buildEddyLoops(svg, eddyG, {cx:240,cy:210,baseR:58,count:3,dir:1});
   setGroupVisible(eddyG, state.showCurrents);
+
+  // The scene otherwise never showed WHY eddy currents exist here: a static
+  // field with a stationary plate induces nothing. This is case (a) from the
+  // module's own answer — "ثابتة لتواجه فيضاً مغناطيسياً مُتغيراً مع الزمن"
+  // (stationary, facing a time-varying flux) — so the field's magnitude
+  // pulses over time, and the eddy loops' visual intensity tracks its rate
+  // of change (dΦ/dt), not the field itself: strongest as the flux crosses
+  // through zero (steepest slope), weakest at its peaks — the same relation
+  // as EMF = -dΦ/dt. qualitative educational visualization, not a solved field.
+  let fluxT = 0;
+  function fluxFrame(dt){
+    fluxT += dt*0.7;
+    const flux = Math.sin(fluxT);
+    const fluxRate = Math.cos(fluxT);
+    const fieldStrength = 0.35 + 0.65*Math.abs(flux);
+    fieldG.style.opacity = state.showField ? fieldStrength.toFixed(2) : 0;
+    for(const p of fieldLines.particles) p.dot.setAttribute('r', (2.6 + 2*Math.abs(flux)).toFixed(2));
+    const eddyStrength = 0.25 + 0.75*Math.abs(fluxRate);
+    eddyG.style.opacity = state.showCurrents ? eddyStrength.toFixed(2) : 0;
+    for(const p of eddyLoops.particles) p.dir = fluxRate>=0 ? 1 : -1;
+  }
+  animEngine.ticks.push(guardTick(root, fluxFrame));
 
   const labelsG = el('div', null, wrap);
   labelsG.style.cssText='position:absolute;inset:0;pointer-events:none;';
@@ -1265,8 +1287,11 @@ function visualInduction(root, mod){
   });
 
   return {
-    syncToggles(){ setGroupVisible(fieldG, state.showField); setGroupVisible(eddyG, state.showCurrents); syncLabels(); },
-    reset(){ stepper.chips.forEach(c=>c.classList.remove('active')); },
+    // fieldG/eddyG opacity is driven every frame by fluxFrame() (which
+    // already respects state.showField/showCurrents) — no separate
+    // setGroupVisible call here, which would just fight it every frame
+    syncToggles(){ syncLabels(); },
+    reset(){ stepper.chips.forEach(c=>c.classList.remove('active')); fluxT=0; },
     replay(){},
   };
 }
@@ -2112,12 +2137,27 @@ function visualDetector(root, mod){
   svgEl('rect',{x:20,y:190,width:380,height:120,fill:'#1a2418',opacity:.9}, groundG);
   for(let i=0;i<10;i++) svgEl('line',{x1:20+i*40,y1:190,x2:20+i*40-14,y2:310,stroke:'#243421','stroke-width':1}, groundG);
 
+  // The answer text specifically names "الحث النبضي" (pulse induction) as the
+  // mechanism — a field that pulses, not a static one — so the transmitted
+  // waves ripple outward continuously rather than sitting still.
   const wavesG = svgEl('g',{}, svg);
   const waves=[];
   for(let i=0;i<3;i++){
-    const w = svgEl('ellipse',{cx:210,cy:170,rx:40+i*22,ry:16+i*7,fill:'none',stroke:'#61D8FF','stroke-width':1.4,opacity:.5-i*0.12}, wavesG);
-    waves.push(w);
+    const w = svgEl('ellipse',{cx:210,cy:170,rx:40,ry:16,fill:'none',stroke:'#61D8FF','stroke-width':1.4,opacity:0}, wavesG);
+    waves.push({el:w, phase:i/3});
   }
+  let waveT = 0;
+  function waveFrame(dt){
+    waveT += dt*0.5;
+    for(const w of waves){
+      const cycle = (waveT + w.phase) % 1;
+      const scale = 1 + cycle*1.7;
+      w.el.setAttribute('rx', (40*scale).toFixed(1));
+      w.el.setAttribute('ry', (16*scale).toFixed(1));
+      w.el.setAttribute('opacity', (state.showField ? (0.55*(1-cycle)) : 0).toFixed(2));
+    }
+  }
+  animEngine.ticks.push(guardTick(root, waveFrame));
 
   const object = svgEl('g',{cursor:'grab'}, svg);
   const objShape = svgEl('circle',{cx:210,cy:250,r:12,fill:'#d9895a',stroke:'#f0a870','stroke-width':2}, object);
