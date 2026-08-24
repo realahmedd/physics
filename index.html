@@ -2347,16 +2347,31 @@ function visualTrain(root, mod){
   trim.position.set(-0.05, 0.14, 0);
   trainGroup.add(trim);
 
-  const wheelMat = new THREE.MeshStandardMaterial({color:0x1a2028, metalness:0.65, roughness:0.4});
-  const hubMat = new THREE.MeshStandardMaterial({color:0x5a6a78, metalness:0.75, roughness:0.3});
-  const wheelGeo = new THREE.CylinderGeometry(0.24,0.24,0.09,20); wheelGeo.rotateX(Math.PI/2);
-  const hubGeo = new THREE.CylinderGeometry(0.06,0.06,0.11,10); hubGeo.rotateX(Math.PI/2);
+  // real train wheel: outer tread + inner web + lighter hub cap + a ring of
+  // lug bolts, instead of a plain disc — matches the reference photo's
+  // machined-metal wheel instead of a flat cylinder
+  const wheelMat = new THREE.MeshStandardMaterial({color:0x1c2430, metalness:0.72, roughness:0.3});
+  const hubMat = new THREE.MeshStandardMaterial({color:0x8695a2, metalness:0.85, roughness:0.2});
+  const boltMat = new THREE.MeshStandardMaterial({color:0x3a4450, metalness:0.8, roughness:0.28});
+  const treadGeo = new THREE.CylinderGeometry(0.24,0.24,0.075,26); treadGeo.rotateX(Math.PI/2);
+  const webGeo = new THREE.CylinderGeometry(0.165,0.165,0.09,22); webGeo.rotateX(Math.PI/2);
+  const hubGeo = new THREE.CylinderGeometry(0.055,0.055,0.11,16); hubGeo.rotateX(Math.PI/2);
+  const boltGeo = new THREE.CylinderGeometry(0.013,0.013,0.02,8); boltGeo.rotateX(Math.PI/2);
   function makeWheel(x, z){
     const g = new THREE.Group();
     [z, -z].forEach(zz=>{
-      const wm = new THREE.Mesh(wheelGeo, wheelMat); wm.castShadow = true;
-      const hm = new THREE.Mesh(hubGeo, hubMat);
-      const wg = new THREE.Group(); wg.add(wm); wg.add(hm); wg.position.z = zz;
+      const wg = new THREE.Group();
+      const tread = new THREE.Mesh(treadGeo, wheelMat); tread.castShadow = true; tread.receiveShadow = true;
+      wg.add(tread);
+      wg.add(new THREE.Mesh(webGeo, wheelMat));
+      wg.add(new THREE.Mesh(hubGeo, hubMat));
+      for(let i=0;i<6;i++){
+        const a = (i/6)*Math.PI*2;
+        const bolt = new THREE.Mesh(boltGeo, boltMat);
+        bolt.position.set(Math.cos(a)*0.1, Math.sin(a)*0.1, 0.05);
+        wg.add(bolt);
+      }
+      wg.position.z = zz;
       g.add(wg);
     });
     g.position.set(x, -0.08, 0);
@@ -2375,6 +2390,21 @@ function visualTrain(root, mod){
   const housing = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.22,0.26), housingMat);
   housing.castShadow = true; housing.receiveShadow = true;
   brakeGroup.add(housing);
+  // cooling ridges + corner bolts — a real "Electromagnetic Brake Unit"
+  // housing, not a bare box, matching the reference photo's mechanical detail
+  const ridgeMat = new THREE.MeshStandardMaterial({color:0x2c3844, metalness:0.68, roughness:0.35});
+  for(let i=0;i<3;i++){
+    const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.304,0.018,0.27), ridgeMat);
+    ridge.position.y = -0.065 + i*0.065;
+    brakeGroup.add(ridge);
+  }
+  const boltMat2 = new THREE.MeshStandardMaterial({color:0x8f9aa5, metalness:0.8, roughness:0.25});
+  const cornerBoltGeo = new THREE.SphereGeometry(0.013,8,8);
+  [[-0.12,0.088],[0.12,0.088],[-0.12,-0.088],[0.12,-0.088]].forEach(([bx,by])=>{
+    const b = new THREE.Mesh(cornerBoltGeo, boltMat2);
+    b.position.set(bx,by,0.135);
+    brakeGroup.add(b);
+  });
   const bracketMat = new THREE.MeshStandardMaterial({color:0x293138, metalness:0.6, roughness:0.42});
   const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.2,0.05), bracketMat);
   bracket.position.set(0, 0.19, -0.06);
@@ -2410,30 +2440,62 @@ function visualTrain(root, mod){
   halo.position.set(0,0,0.26);
   brakeGroup.add(halo);
 
+  // concentric magnetic-field loops radiating from the unit's outward
+  // (camera-facing) face — the reference photo's nested field-line bundle,
+  // not a single flat glow plane
+  const fieldRingsGroup = new THREE.Group();
+  fieldRingsGroup.position.z = 0.26;
+  brakeGroup.add(fieldRingsGroup);
+  const fieldRings = [0.09,0.14,0.19,0.25,0.31].map((r,i)=>{
+    const mat = new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0});
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(r,0.0065,8,30), mat);
+    fieldRingsGroup.add(ring);
+    return {mesh:ring, mat, r, phase:i*0.7};
+  });
+
   // energy shaft projecting the field down onto the rail
   const fieldShaftMat = new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0});
   const fieldShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.05,0.13,12,1,true), fieldShaftMat);
   fieldShaft.position.set(0.62,-0.165,0.42);
   trainGroup.add(fieldShaft);
 
-  // eddy-current rings induced in the rail beneath the unit — cyan loops
-  // (same electromagnetic family as the field glow) with a small gold
-  // "point of effect" core, per the limited warm-accent palette
-  const eddyGroup = new THREE.Group(); trainGroup.add(eddyGroup);
-  eddyGroup.position.set(0.62, -0.19, 0.42);
-  eddyGroup.rotation.x = Math.PI/2;
-  const eddyMat = new THREE.MeshBasicMaterial({color:0x8fe3ff, transparent:true, opacity:0});
-  const eddyTorus = new THREE.Mesh(new THREE.TorusGeometry(0.27,0.014,8,24), eddyMat);
-  eddyGroup.add(eddyTorus);
-  const eddyDot = new THREE.Mesh(new THREE.SphereGeometry(0.032,8,8), new THREE.MeshBasicMaterial({color:0xffb36b, transparent:true, opacity:0}));
-  eddyGroup.add(eddyDot);
+  // eddy currents as a chain of small copper/orange loops threaded along
+  // the rail's length beneath the unit (per the reference image), fading
+  // with distance from the contact point — cyan is reserved for the field,
+  // so this is the scene's one deliberate warm/gold accent
+  const eddyChain = new THREE.Group(); trainGroup.add(eddyChain);
+  eddyChain.position.set(0.62, -0.185, 0.42);
+  const EDDY_N = 8, EDDY_SPACING = 0.135;
+  const eddyRingGeo = new THREE.TorusGeometry(0.062,0.011,8,18);
+  const eddyRings = [];
+  for(let i=0;i<EDDY_N;i++){
+    const off = (i - (EDDY_N-1)/2) * EDDY_SPACING;
+    const mat = new THREE.MeshBasicMaterial({color:0xffb36b, transparent:true, opacity:0});
+    const ring = new THREE.Mesh(eddyRingGeo, mat);
+    ring.rotation.y = Math.PI/2;
+    ring.position.x = off;
+    eddyChain.add(ring);
+    eddyRings.push({mesh:ring, mat, off});
+  }
 
   // light "before" motion cue that fades as the train slows
   const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(-0.9,0.06,0), 0.45, 0x61D8FF, 0.12, 0.07);
   trainGroup.add(velArrow);
-  const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0.62,0.05,0.42), 0.5, 0xFF7A6E, 0.15, 0.085);
+  // opposing-force arrows (double chevron, like the reference) — electric
+  // blue per this scene's palette (orange/copper is reserved for currents)
+  const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0.62,0.08,0.42), 0.5, 0x61D8FF, 0.15, 0.085);
   forceArrow.visible = false;
   trainGroup.add(forceArrow);
+  const forceArrow2 = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0.62,0.02,0.42), 0.38, 0x61D8FF, 0.13, 0.075);
+  forceArrow2.visible = false;
+  trainGroup.add(forceArrow2);
+
+  // light annotation labels — same DOM overlay technique used elsewhere in
+  // the app — appear only while braking, each tied to its own show-toggle
+  const labelsHost = el('div', null, wrap); labelsHost.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  const lblField = mkFieldLabel(labelsHost,'المجال المغناطيسي','#61D8FF','26%','60%');
+  const lblEddy = mkFieldLabel(labelsHost,'تيارات دوامية في السكة','#ffb36b','80%','36%');
+  const lblForce = mkFieldLabel(labelsHost,'قوة معاكسة تسبب الكبح','#61D8FF','52%','80%');
 
   function resize(){
     const w = wrap.clientWidth, h = wrap.clientHeight;
@@ -2447,7 +2509,7 @@ function visualTrain(root, mod){
   ro.observe(wrap);
 
   const TRACK_MIN = -1.5, TRACK_MAX = 1.3;
-  let trainX = TRACK_MIN, speed = 0.72, braking = false, wheelRot = 0, eddyAngle = 0, pulseT = 0;
+  let trainX = TRACK_MIN, speed = 0.72, braking = false, wheelRot = 0, pulseT = 0;
   function frame(dt){
     if(braking) speed *= Math.pow(SIM.trainDecel, dt*60);
     trainX += speed*dt*60*0.012;
@@ -2463,27 +2525,66 @@ function visualTrain(root, mod){
     pulseT += dt*3.2;
     const pulse = 0.75 + 0.25*Math.sin(pulseT);
 
+    const fieldOn = braking && state.showField;
     coilMat.emissiveIntensity = braking ? (0.3 + 0.5*activeStrength*pulse) : 0;
     poleMat.emissiveIntensity = braking ? (0.4 + 0.6*activeStrength*pulse) : 0;
     brakeGlow.intensity = braking ? 1.1*activeStrength*pulse : 0;
-    halo.material.opacity = braking ? (0.5 + 0.4*activeStrength*pulse) : 0;
+    halo.material.opacity = fieldOn ? (0.5 + 0.4*activeStrength*pulse) : 0;
     halo.scale.setScalar(0.5 + 0.12*pulse*activeStrength);
-    fieldShaftMat.opacity = braking ? 0.25 + 0.25*activeStrength*pulse : 0;
+    fieldShaftMat.opacity = fieldOn ? 0.25 + 0.25*activeStrength*pulse : 0;
+    for(const fr of fieldRings){
+      const falloff = clamp(1 - fr.r*1.7, 0.12, 1);
+      fr.mat.opacity = fieldOn ? falloff*0.55*activeStrength*(0.7+0.3*Math.sin(pulseT*1.3 - fr.phase)) : 0;
+    }
     railGlowMat.opacity = braking ? 0.3 + 0.35*activeStrength*pulse : 0;
     railGlowMat.color.set(activeStrength>0.5 ? 0x61D8FF : 0xffb36b);
 
     const currentsOn = braking && state.showCurrents && activeStrength>0.02;
-    eddyTorus.material.opacity = currentsOn ? 0.4+0.35*activeStrength : 0;
-    eddyDot.material.opacity = eddyTorus.material.opacity;
-    eddyAngle += 4*activeStrength*dt*10;
-    eddyDot.position.set(Math.cos(eddyAngle)*0.27, Math.sin(eddyAngle)*0.27, 0);
+    for(const er of eddyRings){
+      const falloff = clamp(1 - Math.abs(er.off)/((EDDY_N-1)/2*EDDY_SPACING*1.05), 0.15, 1);
+      er.mat.opacity = currentsOn ? falloff*0.95*activeStrength*(0.6+0.4*Math.sin(pulseT*2.2 - er.off*9)) : 0;
+    }
 
     velArrow.visible = state.showLabels && !braking && speed>0.05;
-    forceArrow.visible = braking && state.showForces && activeStrength>0.02;
+    const forceOn = braking && state.showForces && activeStrength>0.02;
+    forceArrow.visible = forceOn;
+    forceArrow2.visible = forceOn;
+
+    lblField.classList.toggle('show', fieldOn);
+    lblEddy.classList.toggle('show', currentsOn);
+    lblForce.classList.toggle('show', forceOn);
 
     renderer.render(scene, camera);
   }
   animEngine.ticks.push(guardTick(root, frame));
+
+  // short, one-shot braking sound (band-passed decaying noise burst — no
+  // external audio asset, synthesized on demand) — plays once per
+  // activation, and can play again after a reset re-arms it
+  let brakeAudioCtx = null;
+  function playBrakeSound(){
+    try {
+      if(!brakeAudioCtx) brakeAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = brakeAudioCtx;
+      const dur = 0.5;
+      const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate*dur), ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<data.length;i++){
+        data[i] = (Math.random()*2-1) * Math.pow(1 - i/data.length, 1.6);
+      }
+      const src = ctx.createBufferSource(); src.buffer = buffer;
+      const band = ctx.createBiquadFilter();
+      band.type = 'bandpass'; band.Q.value = 0.9;
+      band.frequency.setValueAtTime(2000, ctx.currentTime);
+      band.frequency.exponentialRampToValueAtTime(500, ctx.currentTime+dur);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime+0.035);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur);
+      src.connect(band); band.connect(gain); gain.connect(ctx.destination);
+      src.start(); src.stop(ctx.currentTime+dur+0.05);
+    } catch(e){ /* Web Audio unavailable — fail silently, sound is a nicety */ }
+  }
 
   const controls = el('div', null, root);
   controls.style.cssText='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;';
@@ -2493,7 +2594,7 @@ function visualTrain(root, mod){
   const resetBtn2 = el('button','btn-secondary-lg', controls);
   resetBtn2.style.cssText='min-height:56px;padding:0 22px;font-size:14px;';
   resetBtn2.textContent='إعادة الضبط';
-  brakeBtn.addEventListener('click', ()=>{ braking = true; });
+  brakeBtn.addEventListener('click', ()=>{ if(braking) return; braking = true; playBrakeSound(); });
   resetBtn2.addEventListener('click', ()=>{ braking=false; speed=0.72; trainX=TRACK_MIN; });
 
   const timelineWrap = el('div', null, root);
