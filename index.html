@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>التيارات الدوامة — الأستاذ باقر أنيس العقابي</title>
+<meta name="description" content="تجربة تعليمية تفاعلية عن التيارات الدوامة — الفيزياء، السادس الإعدادي العلمي">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Loaded non-render-blocking: the app must paint immediately with its
+     Arabic fallback stack even with no internet access in the classroom;
+     the web font upgrades in place once/if it arrives. -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<style>
+/* =========================================================================
+   BAQER PHYSICS LAB — Eddy Currents Interactive Experience
+   Design tokens, motion system, and base styles
+   ========================================================================= */
+:root{
+  --bg-0:#050912;
+  --bg-1:#081321;
+  --bg-2:#0b1a2b;
+  --surface-1:rgba(10,27,43,.66);
+  --surface-2:rgba(15,38,58,.78);
+  --surface-3:rgba(19,46,68,.88);
+
+  --border-soft:rgba(150,210,255,.14);
+  --border-active:rgba(100,215,255,.44);
+  --border-strong:rgba(140,220,255,.6);
+
+  --text-primary:#F3F8FC;
+  --text-secondary:#A8BAC8;
+  --text-muted:#718392;
+
+  --accent:#61D8FF;
+  --accent-2:#7CF2C4;
+  --accent-warm:#FFB36B;
+  --accent-danger:#FF7A6E;
+  --accent-heat:#FF9A4D;
+
+  --motion-fast:180ms;
+  --motion-standard:320ms;
+  --motion-slow:700ms;
+  --motion-cinematic:1200ms;
+
+  --ease-ui:cubic-bezier(.2,.8,.2,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --ease-cinematic:cubic-bezier(.16,1,.3,1);
+
+  --rail-w:76px;
+  --header-h:clamp(52px,5.2vh,68px);
+  --timeline-h:56px;
+
+  --radius-lg:22px;
+  --radius-md:14px;
+  --radius-sm:8px;
+
+  --fs-title:clamp(40px,6vw,70px);
+  --fs-h1:clamp(26px,2.4vw,36px);
+  --fs-question:clamp(24px,2vw,32px);
+  --fs-answer:clamp(19px,1.5vw,26px);
+  --fs-control:clamp(16px,1.1vw,20px);
+  --fs-label:clamp(14px,1vw,17px);
+}
+
+*,*::before,*::after{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0;
+  background:var(--bg-0);
+  color:var(--text-primary);
+  font-family:"IBM Plex Sans Arabic","Noto Sans Arabic","Segoe UI",sans-serif;
+  font-weight:400;
+  overflow:hidden;
+  overscroll-behavior:none;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:manipulation;
+}
+h1,h2,h3,p{margin:0;}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+svg{display:block;overflow:visible;}
+::selection{background:rgba(97,216,255,.3);}
+
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;}
+}
+body.reduced-motion .bg-drift, body.reduced-motion .bg-twinkle{animation:none!important;}
+
+/* =========================================================================
+   COSMIC BACKGROUND — persistent atmosphere behind the whole app
+   ========================================================================= */
+#cosmic-bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(120% 90% at 78% 8%, rgba(31,72,110,.35), transparent 60%),
+    radial-gradient(90% 70% at 12% 96%, rgba(20,50,80,.30), transparent 65%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 55%, #030509 100%);
+}
+#cosmic-bg canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.85;}
+.bg-haze{position:absolute;border-radius:50%;filter:blur(60px);opacity:.28;mix-blend-mode:screen;}
+.bg-haze.h1{width:46vw;height:46vw;background:radial-gradient(circle,#2c6fa8,transparent 70%);top:-14%;right:-8%;animation:driftA 46s ease-in-out infinite;}
+.bg-haze.h2{width:38vw;height:38vw;background:radial-gradient(circle,#1c4e6b,transparent 70%);bottom:-16%;left:-6%;animation:driftB 60s ease-in-out infinite;}
+.bg-haze.h3{width:26vw;height:26vw;background:radial-gradient(circle,#3a8fae,transparent 70%);top:38%;left:22%;animation:driftA 70s ease-in-out infinite reverse;}
+@keyframes driftA{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(-3%,2%) scale(1.05);}}
+@keyframes driftB{0%,100%{transform:translate(0,0) scale(1);}50%{transform:translate(3%,-2%) scale(1.06);}}
+#scene-scrim{position:fixed;inset:0;z-index:1;background:rgba(3,6,11,0);transition:background var(--motion-cinematic) var(--ease-cinematic);pointer-events:none;}
+body.scene-dim #scene-scrim{background:rgba(3,6,11,.42);}
+body.focus-mode #scene-scrim{background:rgba(2,4,8,.72);}
+
+/* =========================================================================
+   APP SHELL
+   ========================================================================= */
+#app{position:fixed;inset:0;z-index:2;display:flex;flex-direction:column;}
+
+/* ---- Header ---- */
+header.app-header{
+  height:var(--header-h);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;gap:16px;
+  background:linear-gradient(180deg, rgba(6,12,22,.7), rgba(6,12,22,.15));
+  border-bottom:1px solid var(--border-soft);
+  backdrop-filter:blur(14px);
+  transition:transform var(--motion-standard) var(--ease-ui), opacity var(--motion-standard) var(--ease-ui);
+  z-index:20;
+}
+body.ui-hidden header.app-header{transform:translateY(-120%);opacity:0;pointer-events:none;}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.brand-mark{width:30px;height:30px;flex:0 0 auto;}
+.brand-text{display:flex;flex-direction:column;line-height:1.15;min-width:0;}
+.brand-text b{font-size:15px;font-weight:700;color:var(--text-primary);white-space:nowrap;}
+.brand-text span{font-size:11px;color:var(--text-muted);white-space:nowrap;}
+.header-crumb{flex:1;display:flex;justify-content:center;min-width:0;}
+.crumb-track{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.crumb-track b{color:var(--text-secondary);font-weight:500;}
+.crumb-sep{opacity:.5;}
+.header-right{display:flex;align-items:center;gap:12px;flex:0 0 auto;}
+.unit-badge{
+  font-size:13px;color:var(--text-secondary);
+  background:var(--surface-1);border:1px solid var(--border-soft);
+  padding:5px 12px;border-radius:100px;font-variant-numeric:tabular-nums;
+  direction:ltr;unicode-bidi:isolate;
+}
+.mode-switch{display:flex;background:var(--surface-1);border:1px solid var(--border-soft);border-radius:100px;padding:3px;gap:2px;}
+.mode-switch button{padding:6px 14px;border-radius:100px;font-size:12.5px;color:var(--text-muted);transition:all var(--motion-fast) var(--ease-ui);}
+.mode-switch button.active{background:var(--accent);color:#03131c;font-weight:600;}
+.icon-btn-sm{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--surface-1);border:1px solid var(--border-soft);color:var(--text-secondary);transition:all var(--motion-fast) var(--ease-ui);}
+.icon-btn-sm:hover{border-color:var(--border-active);color:var(--text-primary);}
+.icon-btn-sm svg{width:17px;height:17px;}
+
+/* ---- Main layout ---- */
+#main-row{flex:1 1 auto;min-height:0;display:grid;grid-template-columns: var(--rail-w) 1fr var(--rail-w);transition:grid-template-columns var(--motion-standard) var(--ease-ui);position:relative;}
+body.nav-collapsed #main-row{grid-template-columns: var(--rail-w) 1fr 0px;}
+body.tools-collapsed #main-row{grid-template-columns: 0px 1fr var(--rail-w);}
+body.nav-collapsed.tools-collapsed #main-row{grid-template-columns: 0px 1fr 0px;}
+body.ui-hidden #main-row{grid-template-columns: 0px 1fr 0px;}
+
+/* ---- Rails ---- */
+.rail{
+  position:relative;z-index:15;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;
+  padding:14px 0;gap:8px;
+  background:linear-gradient(180deg, rgba(7,14,24,.55), rgba(7,14,24,.28));
+  transition:opacity var(--motion-standard) var(--ease-ui);
+}
+.rail.rail-nav{border-inline-start:1px solid var(--border-soft);}
+.rail.rail-tools{border-inline-end:1px solid var(--border-soft);justify-content:space-between;}
+body.nav-collapsed .rail-nav, body.tools-collapsed .rail-tools, body.ui-hidden .rail{opacity:0;pointer-events:none;}
+.rail-group{display:flex;flex-direction:column;gap:8px;align-items:center;}
+.rail-spacer{flex:1;}
+
+.rail-btn{
+  width:56px;height:56px;border-radius:16px;
+  display:grid;place-items:center;position:relative;
+  background:var(--surface-1);border:1px solid var(--border-soft);
+  color:var(--text-secondary);
+  transition:transform var(--motion-fast) var(--ease-spring), border-color var(--motion-fast), background var(--motion-fast), color var(--motion-fast);
+}
+.rail-btn svg{width:24px;height:24px;pointer-events:none;}
+.rail-btn:hover{border-color:var(--border-active);color:var(--text-primary);transform:translateY(-1px);}
+.rail-btn:active{transform:scale(.94);}
+.rail-btn.active{background:rgba(97,216,255,.16);border-color:var(--border-active);color:var(--accent);}
+.rail-btn.on-indicator::after{content:"";position:absolute;inset-inline-end:6px;top:6px;width:7px;height:7px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 8px var(--accent-2);opacity:0;transition:opacity var(--motion-fast);}
+.rail-btn.active.on-indicator::after{opacity:1;}
+.rail-btn .rb-label{position:absolute;inset-inline-end:calc(100% + 10px);top:50%;transform:translateY(-50%) translateX(6px);white-space:nowrap;background:var(--surface-3);border:1px solid var(--border-soft);padding:6px 12px;border-radius:10px;font-size:13px;color:var(--text-primary);opacity:0;pointer-events:none;transition:opacity var(--motion-fast) var(--ease-ui), transform var(--motion-fast) var(--ease-ui);}
+.rail-tools .rail-btn .rb-label{inset-inline-end:auto;inset-inline-start:calc(100% + 10px);}
+.rail-btn:hover .rb-label{opacity:1;transform:translateY(-50%) translateX(0);}
+
+.rail-divider{width:34px;height:1px;background:var(--border-soft);margin:2px 0;}
+
+/* Flyout submenu from nav rail */
+.flyout{
+  position:absolute;top:0;left:calc(100% + 10px);right:auto;
+  background:var(--surface-3);border:1px solid var(--border-soft);border-radius:var(--radius-md);
+  padding:10px;min-width:220px;backdrop-filter:blur(20px);
+  box-shadow:0 20px 50px rgba(0,0,0,.5);
+  opacity:0;transform:translateX(10px);pointer-events:none;
+  transition:opacity var(--motion-fast) var(--ease-ui), transform var(--motion-fast) var(--ease-ui);
+  z-index:30;
+}
+/* rail-nav is docked at the right edge of the screen; open its flyouts physically to the left, toward the stage */
+.rail-nav .flyout{left:auto;right:calc(100% + 10px);}
+.flyout.open{opacity:1;transform:translateX(0);pointer-events:auto;}
+.flyout-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;font-size:14px;color:var(--text-secondary);transition:background var(--motion-fast);text-align:start;width:100%;}
+.flyout-item:hover{background:rgba(97,216,255,.1);color:var(--text-primary);}
+.flyout-item.current{color:var(--accent);background:rgba(97,216,255,.08);}
+.flyout-item .fi-num{font-size:11px;color:var(--text-muted);font-variant-numeric:tabular-nums;min-width:18px;}
+
+/* ---- Stage ---- */
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;}
+.scene{position:absolute;inset:0;opacity:0;transform:scale(1.025);pointer-events:none;transition:opacity var(--motion-cinematic) var(--ease-cinematic), transform var(--motion-cinematic) var(--ease-cinematic);}
+.scene.scene-active{opacity:1;transform:scale(1);pointer-events:auto;}
+
+/* ---- Mini timeline / footer ---- */
+.footer-bar{
+  position:relative;z-index:20;
+  flex:0 0 auto;height:var(--timeline-h);display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:0 24px;background:linear-gradient(0deg, rgba(6,12,22,.65), rgba(6,12,22,.1));
+  border-top:1px solid var(--border-soft);backdrop-filter:blur(10px);
+  transition:transform var(--motion-standard) var(--ease-ui), opacity var(--motion-standard) var(--ease-ui);
+}
+body.ui-hidden .footer-bar{transform:translateY(120%);opacity:0;pointer-events:none;}
+.timeline{display:flex;align-items:center;gap:0;}
+.tl-node{display:flex;align-items:center;}
+.tl-dot{width:15px;height:15px;border-radius:50%;background:var(--surface-2);border:2px solid var(--border-soft);cursor:pointer;position:relative;transition:all var(--motion-fast) var(--ease-spring);flex:0 0 auto;}
+.tl-dot:hover{border-color:var(--border-active);transform:scale(1.15);}
+.tl-dot.done{background:var(--accent);border-color:var(--accent);}
+.tl-dot.current{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(97,216,255,.18);width:17px;height:17px;}
+.tl-dot .tl-tip{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--surface-3);border:1px solid var(--border-soft);padding:4px 10px;border-radius:8px;font-size:11.5px;opacity:0;pointer-events:none;transition:opacity var(--motion-fast);}
+.tl-dot:hover .tl-tip{opacity:1;}
+.tl-line{width:22px;height:2px;background:var(--border-soft);}
+.tl-line.done{background:var(--accent);}
+.footer-label{font-size:12px;color:var(--text-muted);font-variant-numeric:tabular-nums;min-width:52px;text-align:center;direction:ltr;unicode-bidi:isolate;}
+
+/* =========================================================================
+   SHARED SCENE COMPONENTS
+   ========================================================================= */
+.teaching-scene{display:grid;grid-template-columns:1.15fr .85fr;height:100%;}
+.scene-visual{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;padding:26px;}
+.scene-visual .stage-caption{position:absolute;bottom:18px;inset-inline-start:26px;font-size:12.5px;color:var(--text-muted);background:var(--surface-1);border:1px solid var(--border-soft);padding:6px 12px;border-radius:100px;}
+.scene-panel{
+  position:relative;min-width:0;overflow-y:auto;
+  padding:34px 34px 24px;
+  border-inline-start:1px solid var(--border-soft);
+  background:linear-gradient(180deg, rgba(8,16,28,.35), rgba(8,16,28,.55));
+}
+.scene-panel::-webkit-scrollbar{width:6px;}
+.scene-panel::-webkit-scrollbar-thumb{background:var(--border-soft);border-radius:10px;}
+
+.module-tag{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--accent);background:rgba(97,216,255,.1);border:1px solid rgba(97,216,255,.25);padding:5px 12px;border-radius:100px;margin-bottom:14px;}
+.scene-h1{font-size:var(--fs-h1);font-weight:700;color:var(--text-primary);margin-bottom:22px;line-height:1.3;}
+
+.qa-block{margin-bottom:22px;padding-bottom:22px;border-bottom:1px solid var(--border-soft);}
+.qa-block:last-of-type{border-bottom:none;}
+.qa-question{font-size:var(--fs-question);font-weight:600;color:var(--text-primary);line-height:1.55;margin-bottom:16px;}
+.qa-question::before{content:"س";display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:rgba(97,216,255,.15);color:var(--accent);font-size:15px;font-weight:700;margin-inline-end:10px;vertical-align:middle;}
+.btn-reveal{
+  display:inline-flex;align-items:center;gap:10px;font-size:var(--fs-control);font-weight:600;
+  color:#03131c;background:linear-gradient(135deg, var(--accent), #4fb8e6);
+  padding:13px 26px;border-radius:14px;min-height:56px;
+  box-shadow:0 10px 26px rgba(97,216,255,.22);transition:transform var(--motion-fast) var(--ease-spring), box-shadow var(--motion-fast);
+}
+.btn-reveal:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(97,216,255,.32);}
+.btn-reveal:active{transform:scale(.97);}
+.btn-reveal svg{width:19px;height:19px;}
+.qa-answer{margin-top:16px;}
+.qa-answer[hidden]{display:none;}
+.qa-line{
+  font-size:var(--fs-answer);color:var(--text-secondary);line-height:1.85;margin-bottom:10px;
+  opacity:0;transform:translateY(8px);transition:opacity var(--motion-slow) var(--ease-cinematic), transform var(--motion-slow) var(--ease-cinematic);
+}
+.qa-line.in{opacity:1;transform:translateY(0);}
+.qa-line mark{background:rgba(97,216,255,.16);color:var(--accent);padding:0 4px;border-radius:4px;font-weight:600;box-decoration-break:clone;}
+.qa-note{margin-top:14px;font-size:12.5px;color:var(--text-muted);background:var(--surface-1);border:1px dashed var(--border-soft);padding:8px 12px;border-radius:10px;}
+.needs-verify{color:var(--accent-warm);font-size:12px;border:1px solid rgba(255,179,107,.4);padding:1px 8px;border-radius:100px;margin-inline-start:6px;white-space:nowrap;}
+
+body.question-mode .btn-reveal{display:none;}
+body.question-mode .qa-answer{display:none;}
+body.question-mode .qa-hint{display:flex;}
+.qa-hint{display:none;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);margin-top:10px;}
+.qa-hint svg{width:15px;height:15px;}
+
+.lz-stepper{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px;}
+.lz-chip{
+  font-size:13.5px;color:var(--text-secondary);background:var(--surface-1);border:1px solid var(--border-soft);
+  padding:9px 15px;border-radius:11px;min-height:44px;display:flex;align-items:center;gap:6px;transition:all var(--motion-fast) var(--ease-ui);
+}
+.lz-chip:hover{border-color:var(--border-active);}
+.lz-chip.active{background:rgba(97,216,255,.14);border-color:var(--border-active);color:var(--accent);}
+.lz-arrow{color:var(--text-muted);font-size:14px;}
+.lz-caption{min-height:20px;font-size:13px;color:var(--accent-2);margin-top:4px;}
+
+.why-btn{position:absolute;top:18px;inset-inline-end:18px;display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-secondary);background:var(--surface-1);border:1px solid var(--border-soft);padding:8px 14px;border-radius:100px;z-index:6;transition:all var(--motion-fast);}
+.why-btn:hover{border-color:var(--border-active);color:var(--accent);}
+.why-popover{
+  position:absolute;top:60px;inset-inline-end:18px;max-width:300px;z-index:7;
+  background:var(--surface-3);border:1px solid var(--border-active);border-radius:var(--radius-md);
+  padding:16px;backdrop-filter:blur(20px);box-shadow:0 20px 50px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:all var(--motion-fast) var(--ease-ui);
+}
+.why-popover.open{opacity:1;transform:translateY(0);pointer-events:auto;}
+.why-popover b{display:block;color:var(--accent);font-size:12px;margin-bottom:8px;}
+.why-popover p{font-size:14px;color:var(--text-secondary);line-height:1.7;}
+
+.module-nav-btns{display:flex;gap:12px;margin-top:8px;}
+.nav-step-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;border-radius:14px;background:var(--surface-1);border:1px solid var(--border-soft);font-size:var(--fs-control);color:var(--text-secondary);transition:all var(--motion-fast);}
+.nav-step-btn:hover{border-color:var(--border-active);color:var(--text-primary);}
+.nav-step-btn svg{width:18px;height:18px;}
+
+/* Generic labeled arrow used across visuals */
+.field-label{position:absolute;background:var(--surface-3);border:1px solid var(--border-soft);padding:5px 11px;border-radius:9px;font-size:12.5px;color:var(--text-primary);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity var(--motion-standard) var(--ease-ui);display:flex;align-items:center;gap:6px;}
+.field-label.show{opacity:1;}
+.field-label .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+
+/* Meters (relative, not measured data) */
+.meter-block{margin-top:14px;}
+.meter-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.meter-name{font-size:12.5px;color:var(--text-secondary);min-width:88px;}
+.meter-track{flex:1;height:10px;border-radius:100px;background:rgba(255,255,255,.06);overflow:hidden;border:1px solid var(--border-soft);}
+.meter-fill{height:100%;border-radius:100px;transition:width var(--motion-slow) var(--ease-cinematic);}
+.meter-fill.heat{background:linear-gradient(90deg,#8a4a1f,var(--accent-heat));}
+.meter-fill.current{background:linear-gradient(90deg,#1f6a8a,var(--accent));}
+.meter-note{font-size:11px;color:var(--text-muted);margin-top:4px;}
+
+/* =========================================================================
+   HOME SCENE
+   ========================================================================= */
+.home-scene{display:flex;align-items:center;justify-content:center;position:relative;}
+.home-stars{position:absolute;inset:0;}
+.home-core{position:relative;display:flex;flex-direction:column;align-items:center;gap:26px;text-align:center;padding:20px;z-index:2;}
+.home-ring-wrap{width:min(30vw,340px);height:min(30vw,340px);position:relative;margin-bottom:6px;animation:homeFloat 9s ease-in-out infinite;}
+@keyframes homeFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
+.home-ring-wrap svg{width:100%;height:100%;filter:drop-shadow(0 0 30px rgba(97,216,255,.25));}
+.home-kicker{font-size:13px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase;}
+.home-title{font-size:var(--fs-title);font-weight:700;background:linear-gradient(135deg,#fff,#bfe9ff 60%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1;}
+.home-sub{font-size:clamp(16px,1.6vw,22px);color:var(--text-secondary);}
+.home-sub b{color:var(--text-primary);font-weight:600;}
+.home-course{font-size:14px;color:var(--text-muted);}
+.home-actions{display:flex;gap:16px;margin-top:10px;}
+.btn-primary-lg{
+  min-height:64px;padding:0 34px;border-radius:16px;font-size:19px;font-weight:700;
+  background:linear-gradient(135deg,var(--accent),#4fb8e6);color:#03131c;
+  display:flex;align-items:center;gap:10px;box-shadow:0 16px 40px rgba(97,216,255,.28);
+  transition:transform var(--motion-fast) var(--ease-spring), box-shadow var(--motion-fast);
+}
+.btn-primary-lg:hover{transform:translateY(-3px);box-shadow:0 20px 48px rgba(97,216,255,.4);}
+.btn-secondary-lg{
+  min-height:64px;padding:0 30px;border-radius:16px;font-size:17px;font-weight:600;color:var(--text-primary);
+  background:var(--surface-1);border:1px solid var(--border-soft);display:flex;align-items:center;gap:10px;
+  transition:all var(--motion-fast) var(--ease-ui);
+}
+.btn-secondary-lg:hover{border-color:var(--border-active);background:var(--surface-2);}
+.home-fs-hint{position:absolute;bottom:22px;font-size:12px;color:var(--text-muted);display:flex;gap:18px;}
+.home-fs-hint span{display:flex;align-items:center;gap:6px;}
+.home-fs-hint kbd{background:var(--surface-1);border:1px solid var(--border-soft);padding:2px 7px;border-radius:6px;font-size:11px;}
+
+/* =========================================================================
+   OVERVIEW SCENE (استعراض المحتوى)
+   ========================================================================= */
+.overview-scene{padding:50px 60px;overflow-y:auto;height:100%;}
+.overview-head{margin-bottom:26px;}
+.overview-head h2{font-size:var(--fs-h1);font-weight:700;}
+.overview-head p{color:var(--text-muted);font-size:14px;margin-top:6px;}
+.overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.ov-card{
+  background:var(--surface-1);border:1px solid var(--border-soft);border-radius:var(--radius-md);
+  padding:18px;min-height:110px;display:flex;flex-direction:column;gap:8px;justify-content:space-between;
+  transition:all var(--motion-fast) var(--ease-ui);text-align:start;
+}
+.ov-card:hover{border-color:var(--border-active);transform:translateY(-3px);background:var(--surface-2);}
+.ov-num{font-size:12px;color:var(--accent);font-variant-numeric:tabular-nums;}
+.ov-title{font-size:15.5px;font-weight:600;color:var(--text-primary);line-height:1.5;}
+
+/* =========================================================================
+   FOCUS / ANNOTATION / LASER
+   ========================================================================= */
+body.focus-mode .rail,body.focus-mode header.app-header,body.focus-mode .footer-bar,body.focus-mode .scene-panel,body.focus-mode .why-btn{opacity:0!important;pointer-events:none!important;}
+.focus-exit-hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:50;font-size:13px;color:var(--text-secondary);background:var(--surface-2);border:1px solid var(--border-soft);padding:8px 16px;border-radius:100px;opacity:0;transition:opacity var(--motion-standard);pointer-events:none;}
+body.focus-mode .focus-exit-hint{opacity:1;}
+
+/* z-index is local to #app's stacking context here (not the body-level one):
+   10 sits above the plain stage (auto/~0) but below the header (20), rails (15)
+   and footer (20) — so those, and the annotate toggle button inside them, stay
+   reachable at all times even while annotate mode is active. */
+#annotate-canvas{position:fixed;inset:0;z-index:10;pointer-events:none;display:none;}
+body.annotate-active #annotate-canvas{display:block;pointer-events:auto;cursor:crosshair;}
+.annotate-toolbar{position:fixed;bottom:calc(var(--timeline-h) + 18px);left:50%;transform:translateX(-50%) translateY(20px);z-index:25;display:flex;gap:8px;background:var(--surface-3);border:1px solid var(--border-active);padding:8px;border-radius:16px;backdrop-filter:blur(20px);opacity:0;pointer-events:none;transition:all var(--motion-standard) var(--ease-spring);box-shadow:0 20px 50px rgba(0,0,0,.5);}
+body.annotate-active .annotate-toolbar{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+.annotate-toolbar button{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:var(--text-secondary);background:transparent;}
+.annotate-toolbar button.active{background:rgba(97,216,255,.18);color:var(--accent);}
+.annotate-toolbar button svg{width:20px;height:20px;}
+.annotate-toolbar .a-sep{width:1px;background:var(--border-soft);margin:6px 2px;}
+.annotate-color{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,.5);cursor:pointer;}
+
+#laser-dot{position:fixed;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle,rgba(255,110,90,.95),rgba(255,110,90,0) 70%);box-shadow:0 0 24px 8px rgba(255,110,90,.55);pointer-events:none;z-index:70;display:none;transform:translate(-50%,-50%);}
+body.laser-active #laser-dot{display:block;}
+body.laser-active{cursor:none;}
+
+/* =========================================================================
+   LOADING SCREEN
+   ========================================================================= */
+#loading{position:fixed;inset:0;z-index:200;background:var(--bg-0);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity var(--motion-cinematic) var(--ease-cinematic);}
+#loading.hide{opacity:0;pointer-events:none;}
+.load-logo{font-size:22px;font-weight:700;letter-spacing:.08em;color:var(--text-primary);}
+.load-logo span{color:var(--accent);}
+.load-sub{font-size:13.5px;color:var(--text-muted);}
+.load-bar{width:220px;height:3px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden;}
+.load-bar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-2));transition:width .3s var(--ease-ui);}
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+@media (max-width:1200px){
+  .teaching-scene{grid-template-columns:1fr;grid-template-rows:1fr auto;}
+  .scene-panel{border-inline-start:none;border-top:1px solid var(--border-soft);max-height:46%;}
+}
+@media (max-aspect-ratio: 4/3){
+  :root{--rail-w:64px;}
+}
+</style>
+</head>
+<body>
+
+<div id="cosmic-bg" aria-hidden="true">
+  <canvas id="starfield"></canvas>
+  <div class="bg-haze h1"></div>
+  <div class="bg-haze h2"></div>
+  <div class="bg-haze h3"></div>
+</div>
+<div id="scene-scrim" aria-hidden="true"></div>
+
+<div id="loading" role="status" aria-live="polite">
+  <div class="load-logo">BAQER <span>PHYSICS</span> LAB</div>
+  <div class="load-sub">تهيئة المحاكاة...</div>
+  <div class="load-bar"><i id="load-fill"></i></div>
+</div>
+
+<div id="app">
+  <header class="app-header">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="13" fill="none" stroke="#61D8FF" stroke-width="2" opacity=".5"/>
+        <ellipse cx="16" cy="16" rx="13" ry="5" fill="none" stroke="#7CF2C4" stroke-width="1.6"/>
+        <circle cx="16" cy="16" r="2.6" fill="#61D8FF"/>
+      </svg>
+      <div class="brand-text"><b>التيارات الدوامة</b><span>الأستاذ باقر أنيس العقابي</span></div>
+    </div>
+    <div class="header-crumb"><div class="crumb-track" id="crumb-track"></div></div>
+    <div class="header-right">
+      <span class="unit-badge" id="unit-badge">00 / 12</span>
+      <div class="mode-switch" role="tablist" aria-label="وضع العرض">
+        <button id="btn-teacher-mode" class="active" role="tab" aria-selected="true">الأستاذ</button>
+        <button id="btn-student-mode" role="tab" aria-selected="false">الطالب</button>
+      </div>
+      <button class="icon-btn-sm" id="btn-fullscreen" aria-label="ملء الشاشة" title="ملء الشاشة (F)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 1-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/></svg>
+      </button>
+      <button class="icon-btn-sm" id="btn-hide-ui" aria-label="إخفاء الواجهة" title="إخفاء الواجهة (H)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" opacity=".4"/><path d="M2 2l20 20" /></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="main-row">
+    <!-- Teaching tools rail (left in RTL) -->
+    <nav class="rail rail-tools" aria-label="أدوات الشرح">
+      <div class="rail-group">
+        <button class="rail-btn on-indicator active" id="tool-text" title="إظهار/إخفاء النص"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h13"/></svg><span class="rb-label">إظهار/إخفاء النص</span></button>
+        <button class="rail-btn on-indicator active" id="tool-labels" title="إظهار الأسهم والتسميات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="rb-label">التسميات والأسهم</span></button>
+        <button class="rail-btn on-indicator active" id="tool-field" title="إظهار المجال المغناطيسي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4c4 0 4 16 8 16s4-16 8-16" /></svg><span class="rb-label">المجال المغناطيسي</span></button>
+        <button class="rail-btn on-indicator active" id="tool-currents" title="إظهار التيار الدوامي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><path d="M12 5c4 1 4 8-2 8"/></svg><span class="rb-label">التيار الدوامي</span></button>
+        <button class="rail-btn on-indicator" id="tool-forces" title="إظهار القوى"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V6M6 11l6-6 6 6"/></svg><span class="rb-label">القوى</span></button>
+      </div>
+      <div class="rail-divider"></div>
+      <div class="rail-group">
+        <button class="rail-btn" id="tool-replay" title="إعادة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6"/><path d="M20 20a9 9 0 1 0-3-16l-3 3"/></svg><span class="rb-label">إعادة</span></button>
+        <button class="rail-btn on-indicator" id="tool-pause" title="إيقاف/تشغيل مؤقت (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="icon-pause"><rect x="7" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg><span class="rb-label">إيقاف مؤقت</span></button>
+        <button class="rail-btn on-indicator" id="tool-slowmo" title="حركة بطيئة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="rb-label">حركة بطيئة</span></button>
+        <button class="rail-btn" id="tool-reset" title="إعادة الضبط (R)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 20v-5h5"/></svg><span class="rb-label">إعادة الضبط</span></button>
+      </div>
+      <div class="rail-divider"></div>
+      <div class="rail-group">
+        <button class="rail-btn on-indicator" id="tool-question" title="وضع السؤال"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-1 .5-1.5 1-1.5 2.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span class="rb-label">وضع السؤال</span></button>
+        <button class="rail-btn" id="tool-reveal-answer" title="إظهار الإجابة" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span class="rb-label">إظهار الإجابة</span></button>
+        <button class="rail-btn on-indicator" id="tool-focus" title="تثبيت اللحظة / تركيز"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg><span class="rb-label">وضع التركيز</span></button>
+        <button class="rail-btn on-indicator" id="tool-annotate" title="أداة الرسم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21l4-1 12-12-3-3L4 17l-1 4z"/></svg><span class="rb-label">الرسم على الشاشة</span></button>
+        <button class="rail-btn on-indicator" id="tool-laser" title="المؤشر الضوئي"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="8"/></svg><span class="rb-label">المؤشر الضوئي</span></button>
+      </div>
+    </nav>
+
+    <main id="stage" aria-live="polite"></main>
+
+    <!-- Navigation rail (right in RTL) -->
+    <nav class="rail rail-nav" aria-label="التنقل الرئيسي">
+      <div class="rail-group">
+        <div style="position:relative;">
+          <button class="rail-btn" id="nav-home" title="الرئيسية"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg><span class="rb-label">الرئيسية</span></button>
+        </div>
+        <div style="position:relative;">
+          <button class="rail-btn" id="nav-content" title="الكلاميات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v13H8l-4 4V4z"/></svg><span class="rb-label">الكلاميات</span></button>
+          <div class="flyout" id="flyout-content"></div>
+        </div>
+        <div style="position:relative;">
+          <button class="rail-btn" id="nav-experiments" title="التجارب"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v6l-5.5 9a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9V3"/></svg><span class="rb-label">التجارب</span></button>
+          <div class="flyout" id="flyout-experiments"></div>
+        </div>
+        <div style="position:relative;">
+          <button class="rail-btn" id="nav-applications" title="التطبيقات"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="rb-label">التطبيقات</span></button>
+          <div class="flyout" id="flyout-applications"></div>
+        </div>
+        <div style="position:relative;">
+          <button class="rail-btn" id="nav-summary" title="الملخص"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2.4"/><path d="M12 3v4.5M12 16.5V21M3 12h4.5M16.5 12H21M6 6l3 3M18 6l-3 3M6 18l3-3M18 18l-3-3"/></svg><span class="rb-label">الملخص</span></button>
+          <div class="flyout" id="flyout-summary"></div>
+        </div>
+      </div>
+      <div class="rail-spacer"></div>
+      <div class="rail-group">
+        <button class="rail-btn" id="nav-collapse" title="طيّ الشريط"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg><span class="rb-label">طيّ الشريط</span></button>
+      </div>
+    </nav>
+  </div>
+
+  <div class="footer-bar">
+    <div class="crumb-track" style="display:none" id="crumb-track-mobile"></div>
+    <div class="timeline" id="timeline" role="tablist" aria-label="مسار الوحدات"></div>
+    <span class="footer-label" id="footer-label">01 / 12</span>
+  </div>
+
+  <!-- Kept inside #app (not at body level) so the annotate canvas sits BELOW the
+       header/rails/footer in the stacking order: it can still draw over the whole
+       stage, but never covers the very controls (incl. its own toggle button)
+       needed to turn it back off. -->
+  <canvas id="annotate-canvas"></canvas>
+  <div class="annotate-toolbar" role="toolbar" aria-label="أدوات الرسم">
+    <button class="active" id="an-pen" title="قلم"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21l4-1 12-12-3-3L4 17l-1 4z"/></svg></button>
+    <button id="an-eraser" title="ممحاة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13l-7 7H6l-3-3 10-10z"/><path d="M9 7l8 8"/></svg></button>
+    <span class="a-sep"></span>
+    <span class="annotate-color" style="background:#61D8FF" data-color="#61D8FF"></span>
+    <span class="annotate-color" style="background:#FF9A4D" data-color="#FF9A4D"></span>
+    <span class="annotate-color" style="background:#FF7A6E" data-color="#FF7A6E"></span>
+    <span class="annotate-color" style="background:#F3F8FC" data-color="#F3F8FC"></span>
+    <span class="a-sep"></span>
+    <button id="an-clear" title="مسح الكل"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0-1 14a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1L6 6"/></svg></button>
+    <button id="an-close" title="إغلاق"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+</div>
+
+<div id="laser-dot" aria-hidden="true"></div>
+<div class="focus-exit-hint">اضغط في أي مكان أو Esc للخروج من وضع التركيز</div>
+
+<script>
+/* =========================================================================
+   CONTENT MAP — extracted verbatim from the source booklet pages 71–74
+   (مجرة التميز – الجزء الأول). Order preserved exactly as it appears.
+   Text is NOT reworded, shortened, or paraphrased. Ambiguous scan regions
+   are marked with a visible [NEEDS_SOURCE_VERIFICATION] flag rather than
+   guessed.
+   ========================================================================= */
+const CONTENT = [
+{
+  id:'m1', num:1, group:'content',
+  title:'المقصود بالتيارات الدوامة',
+  visual:'induction',
+  qas:[{
+    q:'ما المقصود بالتيارات الدوامة؟ وما سبب نشوئها؟',
+    a:[
+      'هي تيارات مُحتثة تتولد داخل الموصلات نتيجة دورانات مسارها دائرية مُغلقة ومتمركزة في مستوى كل صفيحة معدنية،',
+      'ثابتة لتواجه فيضاً مغناطيسياً مُتغيراً مع الزمن، أو متحركة في مجال مغناطيسي منتظم وبمستويات عمودية للفيض المغناطيسي الذي سبب حثّها.'
+    ]
+  }]
+},
+{
+  id:'m2', num:2, group:'content',
+  title:'مضار التيارات الدوامة وتقليلها',
+  visual:'lamination',
+  qas:[{
+    q:'ما هي مضار التيارات الدوامة وكيف يمكن تقليلها؟',
+    a:[
+      'مضارها أنها تسبب في فقدان طاقة بشكل حرارة في بعض الأجهزة أو في قلب الحديد للملفات، وتولّد فيها وفق **قانون جول**.',
+      'ولتقليل التيارات الدوامة يُصنع القلب بشكل صفائح مكبوسة بكسبا شديدًا، معزولة عن بعضها بذلك، فتزداد المقاومة الكهربائية إلى حد كبير داخل تلك الصفائح، ويقل تبعًا لذلك مقدار التيارات الدوامة.'
+    ]
+  }]
+},
+{
+  id:'m3', num:3, group:'content',
+  title:'لماذا يُصنع القلب من صفائح لا كتلة واحدة',
+  visual:'lamination',
+  qas:[{
+    q:'في معظم الملفات يُصنع القلب بشكل صفائح متوازية من الحديد المطاوع معزولة عن بعضها البعض عزلًا كهربائيًا كبسًا شديدًا، بدلًا من قلب الحديد المطاوع المصنوع كقطعة واحدة، فما الفائدة العملية من ذلك؟ <span class="needs-verify">[NEEDS_SOURCE_VERIFICATION]</span>',
+    a:[
+      'وذلك للتقليل من تأثير التيارات الدوامة التي تتولد في قلب الحديد المطاوع عندما يكون كقطعة واحدة، والتي تسبب فقدان الطاقة بشكل حرارة تتولد فيه وفقًا لقانون جول.'
+    ]
+  }]
+},
+{
+  id:'m4', num:4, group:'content',
+  title:'تقليل خسائر الطاقة في قلوب الملفات والمحولات',
+  visual:'lamination',
+  qas:[{
+    q:'هل يمكن تقليل خسائر الطاقة التي تسبّبها التيارات الدوامة المتولدة في قلب الحديد للملفات والمحولات؟ وضّح ذلك.',
+    a:[
+      'نعم، وذلك بصنع القلب بشكل صفائح من الحديد المطاوع معزولة عن بعضها بكبسًا مكبوسة شديدًا، وتوضع بموازاة خطوط الفيض المغناطيسي المتغيّر الذي يخترقها،',
+      'فيزداد بذلك المقاومة الكهربائية إلى حد كبير داخل تلك الصفائح، ويقل تبعًا لذلك مقدار التيارات الدوامة.'
+    ]
+  }]
+},
+{
+  id:'m5', num:5, group:'content',
+  title:'الصفيحة النحاسية بين قطبي مغناطيس',
+  visual:'plate',
+  qas:[{
+    q:'ما سبب تولّد التيارات الدوامة في صفيحة توصيل نحاسية عند سحبها أفقيًا بين قطبي مغناطيس كثافة فيضه منتظمة نحو الأسفل؟ وما تأثير المجالات المغناطيسية التي تولّدها ذلك؟',
+    a:[
+      'عند سحب صفيحة توصيل أفقيًا بين قطبي مغناطيس كثافة فيضه B منتظمة نحو الأسفل، نتيجة الحركة النسبية بين الصفيحة والقطبين المغناطيسيين، تتولّد تيارات دوامة في سطح الصفيحة وفقًا لـ**قانون فاراداي**.',
+      'فيكون اتجاه الحث الكهرومغناطيسي في المجال المغناطيسي في الجزء الأيمن باتجاه دوران عقارب الساعة، لتولّد فيضًا مغناطيسيًا محتثًا كثافته Bᵢₙd يعاكس المسبب الذي ولّد التيارات وفقًا لـ**قانون لنز**.',
+      'وفي الجزء الأيسر من الصفيحة يكون اتجاه التيارات الدوامة بعكس اتجاه دوران عقارب الساعة، لنفس السبب، وتستطر منها قوة مغناطيسية Fᵦ معاكسة للقوة الساحبة، فهي قوة معرقلة لاتجاه الحركة الساحبة، أي تعاكس قوة السحب.'
+    ]
+  }]
+},
+{
+  id:'m6', num:6, group:'content',
+  title:'الحلقة النحاسية في المجال المغناطيسي',
+  visual:'ring',
+  qas:[{
+    q:'ماذا يحصل ولماذا؟ لو سُحبت حلقة أفقيًا من النحاس بين قطبي مغناطيس كثافة فيضه منتظمة.',
+    a:[
+      'ستولّد تيارات دوامة على سطح الحلقة نتيجة الحركة النسبية للحلقة بين قطبي المغناطيس وكثافة الفيض المغناطيسي،',
+      'وبالتالي يتولّد مجال مغناطيسي مُحتث معاكس، ونتيجة لذلك تتولّد قوة مغناطيسية معاكسة لاتجاه الحركة.'
+    ]
+  }]
+},
+{
+  id:'m7', num:7, group:'experiment',
+  title:'نشاط: تقليل تأثير التيارات الدوامة',
+  visual:'pendulum',
+  qas:[{
+    q:'اشرح نشاطًا توضّح فيه كيفية تقليل تأثير التيارات الدوامة المتولدة في الموصلات.',
+    a:[
+      '**أدوات النشاط:** بندولان متماثلان، كل منهما مصنوع من مادة فيرومغناطيسية ليست الألمنيوم مثلًا، مثبّتة بطرف ساق خفيفة من المادة نفسها. إحدى الصفيحتين مقطعة بشكل قطع معزولة عن بعضها مثل أسنان المشط، والأخرى غير مقطعة. مغناطيس دائمي قوي، وحامل.',
+      '**خطوات النشاط:** نُزيح الصفيحتين بإزاحة متساوية إلى أحد جانبي موقع استقرارهما، ثم نتركهما في آن واحد لتهتز كل منهما بحرية بين قطبي المغناطيس.',
+      'نجد أن البندول الذي يتألف من الصفيحة الكاملة (غير المقطعة) يتوقف عن الحركة سريعًا أثناء مروره بين قطبي المغناطيس، في حين تستمر الصفيحة المقطعة بشكل أسنان المشط بالاهتزاز ذهابًا وإيابًا، ولكن باهتزاز يتناقص تدريجيًا وباستمرار أطول.',
+      '**الاستنتاج:** تتولّد تيارات دوامة كبيرة المقدار في الصفيحة غير المقطعة أثناء حركتها داخل المجال المغناطيسي، وتكون معاكسة الاتجاه (وفقًا لقانون فاراداي ولنز) لسبب حركتها، وتسبّب مجالًا مغناطيسيًا محتثًا معرقلًا لاتجاه حركة الصفيحة، فتتلاشى سعة اهتزازها بسرعة وتتوقف عن الاهتزاز وفقًا لقانون لنز.',
+      'في حين أن التيارات الدوامة المتولدة في الصفيحة المقطعة تكون على شكل شرائح صغيرة جدًا، فيقل تأثيرها في اهتزاز الصفيحة كثيرًا ويكون تخميدها ضعيفًا.'
+    ]
+  }]
+},
+{
+  id:'m8', num:8, group:'experiment',
+  title:'كبح اهتزاز الصفيحة المعدنية',
+  visual:'damping',
+  qas:[{
+    q:'كيف تعمل التيارات الدوامة على كبح اهتزاز الصفيحة المعدنية المهتزة عموديًا على مجال مغناطيسي منتظم؟',
+    a:[
+      'بسبب توليد التيارات الدوامة المحتثة في الصفيحة، سيتولّد مجال مغناطيسي محتث Bᵢₙd معاكس لاتجاه المجال المغناطيسي المؤثر B.',
+      'ونتيجة لذلك تتولّد قوة تنافر بين ذلك المجال والتيارات الدوامة، معرقلة لاتجاه حركة الصفيحة داخل المجال، فتعمل على كبح اهتزاز الصفيحة وفقًا لـ**قانون لنز**.'
+    ]
+  }]
+},
+{
+  id:'m9', num:9, group:'application',
+  title:'مجالات استعمال التيارات الدوامة',
+  visual:'applications',
+  qas:[{
+    q:'اذكر بعض المجالات التي تستثمر فيها التيارات الدوامة.',
+    a:[
+      '• تُستثمر في مكابح القطارات الحديثة ذات الوسائد الهوائية.',
+      '• تُستثمر في كاشفات المعادن الحديثة المستعملة في نقاط التفتيش الأمنية، وخاصة في المطارات.',
+      '• تُستعمل كاشفات المعادن أيضًا للسيطرة على الإشارات الضوئية المنصوبة في بعض تقاطعات الطرق البرية.'
+    ]
+  }]
+},
+{
+  id:'m10', num:10, group:'application',
+  title:'مكابح القطارات الحديثة',
+  visual:'train',
+  qas:[{
+    q:'كيف يمكن إيقاف القطارات الحديثة عن الحركة باستثمار التيارات الدوامة؟',
+    a:[
+      'تُوضع في مكابح بعض أنواع القطارات ملفات سلكية (كل منها يعمل كمغناطيس كهربائي) مقابل قضبان السكة الاعتيادية، وفي الحركة الاعتيادية لا ينساب تيار كهربائي في تلك الملفات.',
+      'ولإيقاف القطار تُغلق الدائرة الكهربائية، فينساب تيار كهربائي في تلك الملفات، وهذا التيار يولّد مجالًا مغناطيسيًا قويًا يمر خلال قضبان السكة الحديدية.',
+      'ونتيجة للحركة النسبية للمجال المغناطيسي بين القضبان، تتولّد تيارات دوامة فيها، وفقًا لقانون لنز تولّد هذه التيارات مجالًا مغناطيسيًا يُعرقل حركة القطار عن السبب الذي ولّدها، فيتوقف القطار عن الحركة.'
+    ]
+  }]
+},
+{
+  id:'m11', num:11, group:'application',
+  title:'كاشفات المعادن',
+  visual:'detector',
+  qas:[{
+    q:'كيف تُستثمر التيارات الدوامة في كاشفات المعادن؟',
+    a:[
+      'تعتمد كاشفات المعادن على ظاهرة الحث الكهرومغناطيسي، والتي تسمى غالبًا (الحث النبضي)، حيث يحتوي جهاز كاشف المعادن على ملفين سلكيين، أحدهما يعمل كمرسل والآخر كمستقبل.',
+      'يُسلَّط فرق جهد متناوب على طرفي ملف الإرسال، فينساب في الملف تيار كهربائي متناوب، والذي يولّد بدوره مجالًا مغناطيسيًا متناوبًا. <span class="needs-verify">[NEEDS_SOURCE_VERIFICATION]</span>',
+      'فعند مرور جسم موصل معدني (لا يُشترط أن يكون بشكل صفيحة) تتولّد فيه تيارات دوامة، فيعمل ذلك الجسم على عرقلة التغيّر الحاصل في الفيض المغناطيسي، وهذا التأثير ينعكس على التيار المتولد في ملف الاستقبال، مما يسبب في تغيّر الإشارة المستقبَلة مقارنة بحالة عدم وجود القطعة المعدنية عن وجودها في الحقائب أو في ملابس الشخص.'
+    ]
+  }]
+},
+{
+  id:'m12', num:12, group:'application',
+  title:'استذكار: مجالات استعمال التيارات الدوامة',
+  visual:'applications',
+  qas:[{
+    q:'اذكر بعض المجالات التي تستثمر فيها التيارات الدوامة موضحًا واحدًا منها.',
+    a:['راجع المجالات المذكورة: مكابح القطارات ذات الوسائد الهوائية، وكاشفات المعادن الأمنية، والسيطرة على الإشارات الضوئية في تقاطعات الطرق.']
+  },{
+    q:'اذكر مجالين من المجالات التي تستثمر فيها التيارات الدوامة.',
+    a:['مكابح القطارات الحديثة، وكاشفات المعادن المستعملة في نقاط التفتيش الأمنية.']
+  }]
+}
+];
+
+const APP_TITLE_BY_GROUP = {content:'الكلاميات', experiment:'التجارب', application:'التطبيقات'};
+
+/* Extra experiment scenes that are not direct booklet Q/A but are visual builds required by the brief */
+const EXTRA_EXPERIMENTS = [
+  {id:'plate-drag', title:'محاكاة: سحب الصفيحة'},
+  {id:'ring-sim', title:'محاكاة: الحلقة النحاسية'}
+];
+
+/* =========================================================================
+   PHYSICS / UI CONSTANTS  (qualitative educational visualization — no
+   fabricated measured values are used anywhere in this file)
+   ========================================================================= */
+const SIM = {
+  pendulumGravity: 0.0022,
+  pendulumLength: 210,
+  dampingSolid: 0.020,      // amplitude decay rate — solid plate (qualitative)
+  dampingSlotted: 0.0032,   // amplitude decay rate — slotted plate (qualitative)
+  plateSpeedMax: 1,
+  fieldParticleRate: 0.16,
+  eddyParticleRate: 0.42,
+  trainDecel: 0.985
+};
+
+/* =========================================================================
+   APP STATE
+   ========================================================================= */
+const state = {
+  scene:'home',
+  teacherMode:true,
+  showText:true,
+  showLabels:true,
+  showField:true,
+  showCurrents:true,
+  showForces:false,
+  animationSpeed:1,
+  paused:false,
+  focusMode:false,
+  questionMode:false,
+  navCollapsed:false,
+  toolsCollapsed:false,
+  uiHidden:false,
+};
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if(reduceMotion){document.body.classList.add('reduced-motion');}
+
+/* =========================================================================
+   SMALL HELPERS
+   ========================================================================= */
+const SVGNS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs={}, parent=null){
+  const el = document.createElementNS(SVGNS, tag);
+  for(const k in attrs) el.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(el);
+  return el;
+}
+function el(tag, cls, parent=null){
+  const e = document.createElement(tag);
+  if(cls) e.className = cls;
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function mark(text){
+  // convert **term** to <mark>term</mark> without altering visible characters
+  return text.replace(/\*\*(.+?)\*\*/g, '<mark>$1</mark>');
+}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+/* =========================================================================
+   GLOBAL ANIMATION ENGINE (single rAF loop; transform/opacity driven)
+   ========================================================================= */
+// A scene that has been visited stays built (cached) in the DOM for instant
+// re-entry, but its particles/ticks must not keep consuming CPU — or keep
+// integrating physics with a stale, ever-growing frame budget — once the
+// teacher has navigated away. Every particle/tick is gated on its owning
+// .scene actually being the active one.
+function ownerSceneOf(elOrNode){
+  return elOrNode && elOrNode.closest ? elOrNode.closest('.scene') : null;
+}
+function guardTick(rootEl, fn){
+  return (now, dt) => {
+    const scene = ownerSceneOf(rootEl);
+    if(scene && !scene.classList.contains('scene-active')) return;
+    fn(dt);
+  };
+}
+const animEngine = {
+  particles:[],
+  ticks:[],
+  lastTime:0,
+  addParticle(p){ p.t = p.t ?? Math.random(); this.particles.push(p); return p; },
+  removeAll(list){ if(!list) return; for(const p of list) { const i=this.particles.indexOf(p); if(i>=0) this.particles.splice(i,1);} },
+  frame(now){
+    if(!animEngine.lastTime) animEngine.lastTime = now;
+    let dt = (now - animEngine.lastTime)/1000;
+    animEngine.lastTime = now;
+    dt = Math.min(dt, 0.05);
+    if(!document.hidden){
+      const speed = state.paused ? 0 : state.animationSpeed;
+      for(const p of animEngine.particles){
+        if(!p.active) continue;
+        if(p.sceneEl===undefined) p.sceneEl = ownerSceneOf(p.path);
+        if(p.sceneEl && !p.sceneEl.classList.contains('scene-active')) continue;
+        if(!p.pathLen) p.pathLen = p.path.getTotalLength();
+        p.t = (p.t + dt*speed*(p.rate||SIM.fieldParticleRate)*(p.dir||1));
+        if(p.t>1) p.t -= 1; if(p.t<0) p.t += 1;
+        const pt = p.path.getPointAtLength(p.t*p.pathLen);
+        p.dot.setAttribute('cx', pt.x.toFixed(2));
+        p.dot.setAttribute('cy', pt.y.toFixed(2));
+      }
+      for(const cb of animEngine.ticks) cb(now, dt*speed);
+    }
+    requestAnimationFrame(animEngine.frame);
+  }
+};
+requestAnimationFrame(animEngine.frame);
+
+/* =========================================================================
+   STARFIELD (static draw — cheap, no per-frame cost)
+   ========================================================================= */
+(function starfield(){
+  const c = document.getElementById('starfield');
+  const ctx = c.getContext('2d');
+  function draw(){
+    const w = c.width = c.offsetWidth * devicePixelRatio;
+    const h = c.height = c.offsetHeight * devicePixelRatio;
+    ctx.clearRect(0,0,w,h);
+    const n = Math.floor((w*h)/38000);
+    for(let i=0;i<n;i++){
+      const x = Math.random()*w, y = Math.random()*h;
+      const r = Math.random()*1.4+.2;
+      const o = Math.random()*.6+.15;
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(200,225,255,${o})`;
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+  draw();
+  window.addEventListener('resize', ()=>{ clearTimeout(window.__sfR); window.__sfR=setTimeout(draw,200); });
+})();
+
+/* =========================================================================
+   SCENE MANAGER
+   ========================================================================= */
+const SceneManager = {
+  scenes:new Map(),
+  current:null,
+  stage:null,
+  init(stage){ this.stage = stage; },
+  register(scene){ this.scenes.set(scene.id, scene); },
+  go(id, opts={}){
+    const next = this.scenes.get(id);
+    if(!next) return;
+    if(this.current === next && !opts.force) return;
+    // Build the target scene BEFORE tearing down the current one, and never let a
+    // single scene's bug blank the whole app — fall back to staying put (graceful
+    // degradation per the error-handling requirement).
+    if(!next.built){
+      try{
+        next.el = el('div','scene', this.stage);
+        next.el.dataset.id = id;
+        next.build(next.el);
+        next.built = true;
+      }catch(err){
+        console.error('[BAQER PHYSICS LAB] failed to build scene "'+id+'":', err);
+        next.el?.remove();
+        next.built = false;
+        return;
+      }
+    }
+    if(this.current){
+      this.current.pause?.();
+      this.current.el.classList.remove('scene-active');
+      this.current.exit?.();
+    }
+    requestAnimationFrame(()=>{
+      next.el.classList.add('scene-active');
+    });
+    try{ next.enter?.(); }catch(err){ console.error('[BAQER PHYSICS LAB] scene "'+id+'" enter() failed:', err); }
+    this.current = next;
+    state.scene = id;
+    onSceneChanged(next);
+  }
+};
+
+/* =========================================================================
+   CHROME UPDATE (breadcrumb, unit badge, timeline, flyouts)
+   ========================================================================= */
+function onSceneChanged(scene){
+  document.getElementById('unit-badge').textContent = scene.num ? String(scene.num).padStart(2,'0')+' / 12' : '— / 12';
+  document.getElementById('footer-label').textContent = scene.num ? String(scene.num).padStart(2,'0')+' / 12' : '';
+  const crumbParts = ['التيارات الدوامة'];
+  if(scene.group) crumbParts.push(APP_TITLE_BY_GROUP[scene.group] || '');
+  crumbParts.push(scene.title || '');
+  const track = document.getElementById('crumb-track');
+  track.innerHTML = crumbParts.filter(Boolean).map((p,i)=>{
+    return (i>0?'<span class="crumb-sep">/</span>':'') + (i===crumbParts.length-1?'<b>'+p+'</b>':'<span>'+p+'</span>');
+  }).join('');
+  document.querySelectorAll('.tl-dot').forEach(d=>{
+    d.classList.toggle('current', d.dataset.id === scene.id);
+    d.classList.toggle('done', scene.num && Number(d.dataset.num) < scene.num);
+  });
+  // question mode: reset reveal on new scene
+  document.getElementById('tool-reveal-answer').style.display = state.questionMode ? 'grid' : 'none';
+  syncFlyouts(scene.id);
+}
+
+function buildTimeline(){
+  const tl = document.getElementById('timeline');
+  tl.innerHTML='';
+  CONTENT.forEach((m,i)=>{
+    if(i>0){ el('div','tl-line', tl); }
+    const wrap = el('div','tl-node', tl);
+    const dot = el('button','tl-dot', wrap);
+    dot.dataset.id = m.id; dot.dataset.num = m.num;
+    dot.setAttribute('aria-label', m.title);
+    const tip = el('span','tl-tip', dot); tip.textContent = m.title;
+    dot.addEventListener('click', ()=> SceneManager.go(m.id));
+  });
+}
+
+function buildFlyouts(){
+  const contentFly = document.getElementById('flyout-content');
+  CONTENT.forEach(m=>{
+    const b = el('button','flyout-item', contentFly);
+    b.dataset.id = m.id;
+    b.innerHTML = `<span class="fi-num">${String(m.num).padStart(2,'0')}</span><span>${m.title}</span>`;
+    b.addEventListener('click', ()=>{ SceneManager.go(m.id); closeFlyouts(); });
+  });
+
+  const expFly = document.getElementById('flyout-experiments');
+  [['m7','نشاط البندولين'],['plate-drag','سحب الصفيحة'],['ring-sim','الحلقة النحاسية'],['m8','كبح الاهتزاز']].forEach(([id,label])=>{
+    const b = el('button','flyout-item', expFly);
+    b.dataset.id=id; b.textContent = label;
+    b.addEventListener('click', ()=>{ SceneManager.go(id); closeFlyouts(); });
+  });
+
+  const appFly = document.getElementById('flyout-applications');
+  [['m9','مجالات الاستعمال'],['m10','مكابح القطارات'],['m11','كاشفات المعادن']].forEach(([id,label])=>{
+    const b = el('button','flyout-item', appFly);
+    b.dataset.id=id; b.textContent = label;
+    b.addEventListener('click', ()=>{ SceneManager.go(id); closeFlyouts(); });
+  });
+
+  const sumFly = document.getElementById('flyout-summary');
+  [['conceptmap','الخريطة المفاهيمية'],['summary','المشهد الختامي'],['quiz','تدريب إضافي']].forEach(([id,label])=>{
+    const b = el('button','flyout-item', sumFly);
+    b.dataset.id=id; b.textContent = label;
+    b.addEventListener('click', ()=>{ SceneManager.go(id); closeFlyouts(); });
+  });
+}
+function syncFlyouts(currentId){
+  document.querySelectorAll('.flyout-item').forEach(i=> i.classList.toggle('current', i.dataset.id===currentId));
+}
+function closeFlyouts(){ document.querySelectorAll('.flyout').forEach(f=>f.classList.remove('open')); }
+document.querySelectorAll('.rail-nav > .rail-group > div > .rail-btn').forEach(()=>{});
+['nav-content','nav-experiments','nav-applications','nav-summary'].forEach(id=>{
+  const btn = document.getElementById(id);
+  const fly = btn.nextElementSibling;
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    const willOpen = !fly.classList.contains('open');
+    closeFlyouts();
+    if(willOpen) fly.classList.add('open');
+  });
+});
+document.addEventListener('click', closeFlyouts);
+
+/* =========================================================================
+   SHARED SCENE-CHROME BUILDER (question panel, reveal, stepper, why-btn)
+   ========================================================================= */
+function buildTeachingScene(container, moduleData, visualBuilder){
+  container.classList.add('teaching-scene');
+  const visual = el('div','scene-visual', container);
+  const panel = el('div','scene-panel', container);
+
+  const tag = el('div','module-tag', panel);
+  tag.innerHTML = `<span style="direction:ltr;unicode-bidi:isolate;">${String(moduleData.num).padStart(2,'0')} / 12</span><span>·</span><span>${APP_TITLE_BY_GROUP[moduleData.group]}</span>`;
+  const h1 = el('h2','scene-h1', panel); h1.textContent = moduleData.title;
+
+  const revealState = [];
+  moduleData.qas.forEach((qa, qi)=>{
+    const block = el('div','qa-block', panel);
+    const q = el('div','qa-question', block); q.innerHTML = mark(qa.q);
+    const btn = el('button','btn-reveal', block);
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span>كشف الإجابة</span>`;
+    const ans = el('div','qa-answer', block); ans.hidden = true;
+    qa.a.forEach((line,i)=>{
+      const p = el('p','qa-line', ans); p.innerHTML = mark(line); p.style.transitionDelay = (i*140)+'ms';
+    });
+    const hint = el('div','qa-hint', block);
+    hint.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg><span>اسأل الطلاب أولًا — ثم اضغط «إظهار الإجابة» من شريط الأدوات</span>`;
+    revealState.push({btn, ans});
+    btn.addEventListener('click', ()=> revealQA(btn, ans));
+  });
+
+  panel.__revealAll = ()=> revealState.forEach(r=> revealQA(r.btn, r.ans, true));
+  panel.__firstReveal = ()=> revealState[0] && revealQA(revealState[0].btn, revealState[0].ans);
+
+  const navBtns = el('div','module-nav-btns', panel);
+  const idx = CONTENT.findIndex(m=>m.id===moduleData.id);
+  const prevBtn = el('button','nav-step-btn', navBtns);
+  prevBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg><span>السابق</span>`;
+  const nextBtn = el('button','nav-step-btn', navBtns);
+  nextBtn.innerHTML = `<span>التالي</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>`;
+  prevBtn.style.visibility = idx>0 ? 'visible':'hidden';
+  nextBtn.style.visibility = idx<CONTENT.length-1 ? 'visible':'hidden';
+  prevBtn.addEventListener('click', ()=> idx>0 && SceneManager.go(CONTENT[idx-1].id));
+  nextBtn.addEventListener('click', ()=> idx<CONTENT.length-1 && SceneManager.go(CONTENT[idx+1].id));
+
+  const whyBtn = el('button','why-btn', visual);
+  whyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-1 .5-1.5 1-1.5 2.2"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg><span>لماذا؟</span>`;
+  const whyPop = el('div','why-popover', visual);
+  whyPop.innerHTML = `<b>توضيح بصري</b><p>${moduleData.why || 'راقب كيف يولّد تغيّر الفيض تيارًا مغلقًا داخل المعدن، وكيف يعاكس هذا التيار سببه وفقًا لقانون لنز.'}</p>`;
+  whyBtn.addEventListener('click', ()=> whyPop.classList.toggle('open'));
+
+  const api = visualBuilder ? visualBuilder(visual, moduleData) : null;
+  container.__panel = panel;
+  container.__visualAPI = api;
+  return api;
+}
+function revealQA(btn, ansEl, silent){
+  if(!ansEl.hidden) return;
+  ansEl.hidden = false;
+  requestAnimationFrame(()=>{
+    ansEl.querySelectorAll('.qa-line').forEach(l=> l.classList.add('in'));
+  });
+  btn.style.display='none';
+}
+
+/* =========================================================================
+   MAGNETIC FIELD + EDDY CURRENT ENGINE (reusable across scenes)
+   Uses SVG for vector paths (field lines, loops, arrows) and lightweight
+   rAF-driven particles traveling along those paths.
+   ========================================================================= */
+function buildFieldLines(svg, group, {x0,x1,y0,y1,count=5, dir=1}){
+  const g = svgEl('g',{class:'field-lines'}, group);
+  const particles=[];
+  for(let i=0;i<count;i++){
+    const x = lerp(x0,x1, (i+.5)/count);
+    const d = `M ${x} ${y0} L ${x} ${y1}`;
+    const path = svgEl('path',{d, stroke:'rgba(120,200,255,.35)','stroke-width':1.6,fill:'none','stroke-dasharray':'2 7','stroke-linecap':'round'}, g);
+    const dot = svgEl('circle',{r:3.4, fill:'#61D8FF', opacity:.9}, g);
+    const p = animEngine.addParticle({path, dot, rate:SIM.fieldParticleRate, dir, active:true, t:i/count});
+    particles.push(p);
+  }
+  return {g, particles};
+}
+function buildEddyLoops(svg, group, {cx,cy,baseR=46,count=3,dir=1,gap=16,color='#7CF2C4'}){
+  const g = svgEl('g',{class:'eddy-loops'}, group);
+  const particles=[];
+  const paths=[];
+  for(let i=0;i<count;i++){
+    const rx = baseR - i*gap*.5;
+    const ry = rx*.62;
+    const path = svgEl('ellipse',{cx,cy,rx:Math.max(rx,10),ry:Math.max(ry,7),fill:'none',stroke:color,'stroke-width':1.8,opacity:(1-i*0.22).toFixed(2)}, g);
+    paths.push(path);
+    // ellipse doesn't support getPointAtLength directly in all browsers reliably via <ellipse>; use a path 'd' equivalent
+    const d = ellipseToPath(cx,cy,Math.max(rx,10),Math.max(ry,7));
+    path.remove();
+    const p2 = svgEl('path',{d, fill:'none', stroke:color, 'stroke-width':1.8, opacity:(1-i*0.22).toFixed(2)}, g);
+    const dot = svgEl('circle',{r:3.2, fill:color}, g);
+    animEngine.addParticle({path:p2, dot, rate:SIM.eddyParticleRate*(1-i*0.12), dir, active:true, t:i/count});
+    particles.push({path:p2,dot});
+  }
+  return {g, particles};
+}
+function ellipseToPath(cx,cy,rx,ry){
+  return `M ${cx-rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx+rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx-rx} ${cy} Z`;
+}
+function setGroupVisible(g, visible){
+  if(!g) return;
+  g.style.opacity = visible? 1 : 0;
+  g.style.transition = `opacity var(--motion-standard) var(--ease-ui)`;
+  g.style.pointerEvents = visible? 'auto':'none';
+}
+
+/* Lenz-law sequential stepper builder: ΔΦ → EMF → I_eddy → B_ind → F_B */
+function buildLenzStepper(container, onStep, labels){
+  const steps = labels || ['ΔΦ','EMF','I_eddy','B_ind','F_B'];
+  const captions = {
+    'ΔΦ':'يتغيّر الفيض المغناطيسي المخترق للموصل.',
+    'EMF':'يتولّد قوة دافعة كهربائية محتثة وفق قانون فاراداي.',
+    'I_eddy':'تسري تيارات دوامة في مسارات مغلقة داخل المعدن.',
+    'B_ind':'تولّد هذه التيارات مجالًا مغناطيسيًا محتثًا خاصًا بها.',
+    'F_B':'ينشأ عن ذلك قوة تعاكس سبب التغيّر وفق قانون لنز.'
+  };
+  const wrap = el('div','lz-stepper', container);
+  const caption = el('div','lz-caption', container);
+  const chips=[];
+  steps.forEach((s,i)=>{
+    if(i>0) el('span','lz-arrow', wrap).textContent='←';
+    const chip = el('button','lz-chip', wrap); chip.textContent = s;
+    chip.addEventListener('click', ()=>{
+      chips.forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      caption.textContent = captions[s]||'';
+      onStep && onStep(s,i);
+    });
+    chips.push(chip);
+  });
+  return {chips, caption, activate:(i)=> chips[i]?.click()};
+}
+
+/* =========================================================================
+   VISUAL BUILDERS PER MODULE
+   ========================================================================= */
+
+/* ---- M1: Conductor + changing flux + eddy currents (induction) ---- */
+function visualInduction(root, mod){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+  const wrap = el('div', null, root);
+  wrap.style.cssText='width:min(46vw,560px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 480 420', style:'width:100%;height:auto;filter:drop-shadow(0 20px 40px rgba(0,0,0,.4))'}, wrap);
+
+  // magnet poles
+  svgEl('rect',{x:60,y:20,width:360,height:34,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:240,y:42,'text-anchor':'middle',fill:'#F3F8FC','font-size':16,'font-weight':700}, svg).textContent='N';
+  svgEl('rect',{x:60,y:366,width:360,height:34,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:240,y:388,'text-anchor':'middle',fill:'#F3F8FC','font-size':16,'font-weight':700}, svg).textContent='S';
+
+  // conductor plate
+  const plate = svgEl('rect',{x:160,y:150,width:160,height:120,rx:10,fill:'url(#copperGrad)',stroke:'#d9895a','stroke-width':2}, svg);
+  const defs = svgEl('defs',{},svg);
+  const grad = svgEl('linearGradient',{id:'copperGrad',x1:0,y1:0,x2:1,y2:1},defs);
+  svgEl('stop',{offset:'0%','stop-color':'#c97a4a'},grad);
+  svgEl('stop',{offset:'100%','stop-color':'#8a4a26'},grad);
+
+  const fieldG = svgEl('g',{}, svg);
+  buildFieldLines(svg, fieldG, {x0:90,x1:390,y0:60,y1:360,count:6,dir:1});
+  setGroupVisible(fieldG, state.showField);
+
+  const eddyG = svgEl('g',{}, svg);
+  buildEddyLoops(svg, eddyG, {cx:240,cy:210,baseR:58,count:3,dir:1});
+  setGroupVisible(eddyG, state.showCurrents);
+
+  const labelsG = el('div', null, wrap);
+  labelsG.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  const l1 = mkFieldLabel(labelsG, 'الفيض المغناطيسي B', '#61D8FF', '8%','6%');
+  const l2 = mkFieldLabel(labelsG, 'موصل معدني', '#FFB36B', '38%','48%');
+  const l3 = mkFieldLabel(labelsG, 'تيارات دوامة', '#7CF2C4', '62%','40%');
+  function syncLabels(){ [l1,l2,l3].forEach(l=> l.classList.toggle('show', state.showLabels)); }
+  syncLabels();
+
+  const stepperHost = el('div', null, root);
+  stepperHost.style.cssText='position:absolute;bottom:20px;inset-inline-start:26px;inset-inline-end:26px;max-width:640px;';
+  const stepper = buildLenzStepper(stepperHost, (s)=>{
+    eddyG.style.filter = s==='I_eddy'||s==='B_ind'||s==='F_B' ? 'drop-shadow(0 0 10px rgba(124,242,196,.7))':'none';
+  });
+
+  return {
+    syncToggles(){ setGroupVisible(fieldG, state.showField); setGroupVisible(eddyG, state.showCurrents); syncLabels(); },
+    reset(){ stepper.chips.forEach(c=>c.classList.remove('active')); },
+    replay(){},
+  };
+}
+function mkFieldLabel(host, text, color, top, left){
+  const l = el('div','field-label show', host);
+  l.style.top = top; l.style.left = left;
+  l.innerHTML = `<span class="dot" style="background:${color}"></span><span>${text}</span>`;
+  return l;
+}
+
+/* ---- M2/M3/M4: shared Laminated Core Lab (solid vs laminated) ---- */
+function visualLamination(root, mod){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;';
+  const stageWrap = el('div', null, root);
+  stageWrap.style.cssText='width:min(50vw,620px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 560 300', style:'width:100%;height:auto;'}, stageWrap);
+
+  svgEl('text',{x:130,y:26,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':13}, svg).textContent='قلب كتلة واحدة';
+  svgEl('text',{x:430,y:26,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':13}, svg).textContent='قلب مصفّح';
+
+  const solidCore = svgEl('rect',{x:60,y:50,width:140,height:170,rx:8,fill:'#3a2a20',stroke:'#8a5a34','stroke-width':2}, svg);
+  const solidHeat = svgEl('rect',{x:60,y:50,width:140,height:170,rx:8,fill:'url(#heatGrad)',opacity:.85}, svg);
+  const defs = svgEl('defs',{},svg);
+  const hg = svgEl('radialGradient',{id:'heatGrad',cx:'50%',cy:'50%',r:'65%'},defs);
+  svgEl('stop',{offset:'0%','stop-color':'#ff9a4d','stop-opacity':.85},hg);
+  svgEl('stop',{offset:'100%','stop-color':'#ff9a4d','stop-opacity':0},hg);
+
+  const solidLoopsG = svgEl('g',{}, svg);
+  [0,1].forEach(i=> buildEddyLoops(svg, solidLoopsG, {cx:130,cy:100+i*80,baseR:38,count:2,dir:1,color:'#ffb36b'}));
+
+  const lamCore = svgEl('g',{}, svg);
+  const lamCount = 7;
+  for(let i=0;i<lamCount;i++){
+    const x = 360 + i*(200/lamCount);
+    svgEl('rect',{x, y:50, width:200/lamCount-2, height:170, rx:2, fill:'#2a3b2f', stroke:'#5a8a68','stroke-width':1}, lamCore);
+  }
+  const lamLoopsG = svgEl('g',{}, svg);
+  for(let i=0;i<lamCount;i++){
+    const x = 360 + i*(200/lamCount) + (200/lamCount)/2;
+    buildEddyLoops(svg, lamLoopsG, {cx:x,cy:100,baseR:9,count:1,dir: i%2?1:-1,color:'#7CF2C4'});
+    buildEddyLoops(svg, lamLoopsG, {cx:x,cy:180,baseR:9,count:1,dir: i%2?-1:1,color:'#7CF2C4'});
+  }
+
+  const fieldG = svgEl('g',{}, svg);
+  buildFieldLines(svg, fieldG, {x0:70,x1:190,y0:20,y1:230,count:3,dir:1});
+  buildFieldLines(svg, fieldG, {x0:365,x1:555,y0:20,y1:230,count:5,dir:1});
+  setGroupVisible(fieldG, state.showField);
+  setGroupVisible(solidLoopsG, state.showCurrents);
+  setGroupVisible(lamLoopsG, state.showCurrents);
+
+  // comparison slider (visual crossfade influence on solid core "shattering" into strips)
+  const sliderWrap = el('div', null, root);
+  sliderWrap.style.cssText='width:min(50vw,620px);display:flex;align-items:center;gap:14px;';
+  const sLabelA = el('span', null, sliderWrap); sLabelA.textContent='كتلة واحدة'; sLabelA.style.cssText='font-size:12.5px;color:var(--text-muted);white-space:nowrap;';
+  const range = el('input', null, sliderWrap);
+  range.type='range'; range.min=0; range.max=100; range.value=0;
+  range.style.cssText='flex:1;height:56px;accent-color:#61D8FF;';
+  const sLabelB = el('span', null, sliderWrap); sLabelB.textContent='مصفّح بالكامل'; sLabelB.style.cssText='font-size:12.5px;color:var(--text-muted);white-space:nowrap;';
+
+  const meters = el('div','meter-block', root);
+  meters.style.cssText='width:min(50vw,620px);';
+  const heatRow = mkMeterRow(meters,'خسارة حرارية','heat');
+  const curRow = mkMeterRow(meters,'شدة التيارات','current');
+  const noteEl = el('div','meter-note', meters); noteEl.textContent='تمثيل نسبي وليس قياسًا فعليًا — لا توجد بيانات رقمية في المصدر.';
+
+  function applyLevel(v){
+    const t = v/100; // 0 solid .. 1 laminated
+    solidHeat.style.opacity = (1-t*0.85).toFixed(2);
+    lamCore.style.opacity = clamp(t*1.3,0.15,1).toFixed(2);
+    solidCore.style.opacity = clamp(1-t*0.15,0.55,1).toFixed(2);
+    heatRow.setPct(Math.round(88 - t*70));
+    curRow.setPct(Math.round(82 - t*66));
+  }
+  applyLevel(0);
+  range.addEventListener('input', ()=> applyLevel(Number(range.value)));
+
+  return {
+    syncToggles(){ setGroupVisible(fieldG, state.showField); setGroupVisible(solidLoopsG, state.showCurrents); setGroupVisible(lamLoopsG, state.showCurrents); },
+    reset(){ range.value=0; applyLevel(0); },
+    replay(){},
+  };
+}
+function mkMeterRow(host, name, cls){
+  const row = el('div','meter-row', host);
+  const nm = el('span','meter-name', row); nm.textContent = name;
+  const track = el('div','meter-track', row);
+  const fill = el('div','meter-fill '+cls, track);
+  return { setPct(p){ fill.style.width = clamp(p,4,100)+'%'; } };
+}
+
+/* ---- M5: Copper plate drag between magnet poles ---- */
+function visualPlate(root, mod){
+  return buildPlateRig(root, {embedded:true});
+}
+function buildPlateRig(root, opts={}){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  const wrap = el('div', null, root); wrap.style.cssText='width:min(46vw,520px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 460 380', style:'width:100%;height:auto;'}, wrap);
+  svgEl('rect',{x:150,y:30,width:160,height:30,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:230,y:51,'text-anchor':'middle',fill:'#fff','font-size':14,'font-weight':700}, svg).textContent='N';
+  svgEl('rect',{x:150,y:320,width:160,height:30,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:230,y:341,'text-anchor':'middle',fill:'#fff','font-size':14,'font-weight':700}, svg).textContent='S';
+
+  const fieldG = svgEl('g',{}, svg);
+  buildFieldLines(svg, fieldG, {x0:170,x1:290,y0:64,y1:316,count:4,dir:1});
+  setGroupVisible(fieldG, state.showField);
+
+  const plateG = svgEl('g',{}, svg);
+  const plate = svgEl('rect',{x:80,y:150,width:120,height:80,rx:8,fill:'url(#pcGrad)',stroke:'#d9895a','stroke-width':2}, plateG);
+  const defs = svgEl('defs',{},svg);
+  const grad = svgEl('linearGradient',{id:'pcGrad',x1:0,y1:0,x2:1,y2:1},defs);
+  svgEl('stop',{offset:'0%','stop-color':'#c97a4a'},grad);
+  svgEl('stop',{offset:'100%','stop-color':'#8a4a26'},grad);
+
+  const eddyG = svgEl('g',{}, plateG);
+  const loops = buildEddyLoops(svg, eddyG, {cx:140,cy:190,baseR:30,count:2,dir:1,color:'#7CF2C4'});
+  setGroupVisible(eddyG, state.showCurrents);
+
+  const velArrow = svgEl('line',{x1:140,y1:230,x2:200,y2:230,stroke:'#61D8FF','stroke-width':3,'marker-end':'url(#arrowBlue)'}, plateG);
+  const forceArrow = svgEl('line',{x1:140,y1:150,x2:100,y2:150,stroke:'#FF7A6E','stroke-width':3,'marker-end':'url(#arrowRed)'}, plateG);
+  const marker1 = svgEl('marker',{id:'arrowBlue',markerWidth:8,markerHeight:8,refX:6,refY:4,orient:'auto'},defs);
+  svgEl('path',{d:'M0 0L8 4L0 8Z',fill:'#61D8FF'}, marker1);
+  const marker2 = svgEl('marker',{id:'arrowRed',markerWidth:8,markerHeight:8,refX:6,refY:4,orient:'auto'},defs);
+  svgEl('path',{d:'M0 0L8 4L0 8Z',fill:'#FF7A6E'}, marker2);
+  velArrow.style.display = state.showLabels? '':'none';
+  forceArrow.style.display = (state.showForces)? '':'none';
+
+  let x = 80, dir = 1, speed = .45, dragging=false;
+  function frame(dt){
+    if(!dragging){
+      x += dir*speed*dt*60;
+      if(x>260){x=260;dir=-1;} if(x<40){x=40;dir=1;}
+    }
+    plateG.setAttribute('transform', `translate(${x-80},0)`);
+    const intensity = clamp(speed/1.0, .15, 1);
+    eddyG.style.opacity = state.showCurrents ? intensity.toFixed(2):0;
+    velArrow.setAttribute('x2', 140 + dir*60*intensity);
+  }
+  animEngine.ticks.push(guardTick(root, frame));
+
+  // drag gesture
+  let dragStartX=0, plateStartX=0;
+  plate.style.cursor='grab';
+  plate.addEventListener('pointerdown', (e)=>{ dragging=true; dragStartX=e.clientX; plateStartX=x; plate.setPointerCapture(e.pointerId); plate.style.cursor='grabbing'; });
+  plate.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    const svgRect = svg.getBoundingClientRect();
+    const scale = 460/svgRect.width;
+    const dx = (e.clientX-dragStartX)*scale;
+    const prevX = x;
+    x = clamp(plateStartX+dx, 40, 260);
+    speed = clamp(Math.abs(x-prevX)/6, 0.05, 2.2);
+    dir = (x-prevX)>=0?1:-1;
+  });
+  const endDrag = ()=>{ dragging=false; plate.style.cursor='grab'; };
+  plate.addEventListener('pointerup', endDrag);
+  plate.addEventListener('pointerleave', endDrag);
+
+  // velocity control
+  const controls = el('div', null, root);
+  controls.style.cssText='width:min(46vw,520px);display:flex;align-items:center;gap:14px;';
+  const lbl1 = el('span',null,controls); lbl1.textContent='بطيء'; lbl1.style.cssText='font-size:12.5px;color:var(--text-muted);';
+  const range = el('input', null, controls);
+  range.type='range'; range.min=5; range.max=220; range.value=45;
+  range.style.cssText='flex:1;height:56px;accent-color:#61D8FF;';
+  const lbl2 = el('span',null,controls); lbl2.textContent='سريع'; lbl2.style.cssText='font-size:12.5px;color:var(--text-muted);';
+  range.addEventListener('input', ()=>{ speed = Number(range.value)/100; });
+
+  const dragBtn = el('button','btn-secondary-lg', root);
+  dragBtn.style.cssText='min-height:52px;padding:0 22px;font-size:14px;';
+  dragBtn.innerHTML = '<span>اسحب الصفيحة يدويًا لتجربة الإحساس بالحركة</span>';
+  dragBtn.addEventListener('click', ()=>{ dragBtn.style.display='none'; });
+
+  const labelsHost = el('div', null, wrap); labelsHost.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  const lv = mkFieldLabel(labelsHost,'السرعة v','#61D8FF','58%','40%');
+  const lf = mkFieldLabel(labelsHost,'القوة المعرقلة Fᵦ','#FF7A6E','36%','12%');
+  const lb = mkFieldLabel(labelsHost,'الفيض B','#7CF2C4','6%','60%');
+  function syncLabels(){
+    lv.classList.toggle('show', state.showLabels);
+    lb.classList.toggle('show', state.showLabels);
+    lf.classList.toggle('show', state.showForces);
+    forceArrow.style.display = state.showForces ? '' : 'none';
+  }
+  syncLabels();
+
+  return {
+    syncToggles(){ setGroupVisible(fieldG, state.showField); syncLabels(); },
+    reset(){ x=80; dir=1; speed=.45; range.value=45; },
+    replay(){ x=80; dir=1; },
+  };
+}
+
+/* ---- M6: Copper ring pulled through the field ---- */
+function visualRing(root, mod){ return buildRingRig(root); }
+function buildRingRig(root){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;';
+  const wrap = el('div', null, root); wrap.style.cssText='width:min(42vw,460px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 420 380', style:'width:100%;height:auto;'}, wrap);
+  svgEl('rect',{x:130,y:30,width:160,height:28,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:210,y:50,'text-anchor':'middle',fill:'#fff','font-size':13,'font-weight':700}, svg).textContent='N';
+  svgEl('rect',{x:130,y:322,width:160,height:28,rx:6,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:210,y:341,'text-anchor':'middle',fill:'#fff','font-size':13,'font-weight':700}, svg).textContent='S';
+
+  const fieldG = svgEl('g',{}, svg);
+  buildFieldLines(svg, fieldG, {x0:150,x1:270,y0:62,y1:318,count:4,dir:1});
+  setGroupVisible(fieldG, state.showField);
+
+  const ringG = svgEl('g',{}, svg);
+  const ring = svgEl('ellipse',{cx:0,cy:190,rx:44,ry:60,fill:'none',stroke:'#d9895a','stroke-width':10}, ringG);
+  const eddyG = svgEl('g',{}, ringG);
+  buildEddyLoops(svg, eddyG, {cx:0,cy:190,baseR:34,count:2,dir:1,color:'#7CF2C4'});
+  setGroupVisible(eddyG, state.showCurrents);
+
+  let x = 60, dir=1, speed=.4;
+  function frame(dt){
+    x += dir*speed*dt*60;
+    if(x>360){x=360;dir=-1;} if(x<60){x=60;dir=1;}
+    ringG.setAttribute('transform', `translate(${x},0)`);
+    eddyG.style.opacity = state.showCurrents ? clamp(speed,.2,1).toFixed(2):0;
+  }
+  animEngine.ticks.push(guardTick(root, frame));
+
+  const controls = el('div', null, root);
+  controls.style.cssText='position:absolute;bottom:20px;display:flex;gap:12px;';
+  const playBtn = el('button','btn-secondary-lg', controls);
+  playBtn.style.cssText='min-height:52px;padding:0 22px;font-size:14px;';
+  playBtn.textContent='ابدأ سحب الحلقة';
+  let running=true;
+  playBtn.addEventListener('click', ()=>{ running=!running; speed = running? .4:0; playBtn.textContent = running? 'إيقاف':'ابدأ سحب الحلقة'; });
+
+  return { syncToggles(){ setGroupVisible(fieldG,state.showField); setGroupVisible(eddyG,state.showCurrents);}, reset(){x=60;dir=1;}, replay(){x=60;dir=1;} };
+}
+
+/* ---- M7: Twin pendulum experiment ---- */
+function visualPendulum(root, mod){ return buildPendulumScene(root); }
+function buildPendulumScene(root, opts={}){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;';
+  const wrap = el('div', null, root); wrap.style.cssText='width:min(50vw,600px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 560 380', style:'width:100%;height:auto;'}, wrap);
+
+  svgEl('rect',{x:120,y:10,width:320,height:10,rx:4,fill:'#39505f'}, svg);
+  svgEl('circle',{cx:200,cy:20,r:5,fill:'#39505f'}, svg);
+  svgEl('circle',{cx:360,cy:20,r:5,fill:'#39505f'}, svg);
+
+  // magnet in the middle, poles facing each other around the lowest point
+  svgEl('rect',{x:230,y:150,width:26,height:80,rx:5,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:243,y:145,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':11}, svg).textContent='N';
+  svgEl('rect',{x:304,y:150,width:26,height:80,rx:5,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:317,y:145,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':11}, svg).textContent='S';
+
+  function makePendulum(pivotX, plateType, color){
+    const g = svgEl('g',{}, svg);
+    const rod = svgEl('line',{x1:pivotX,y1:20,x2:pivotX,y2:170,stroke:'#5a7385','stroke-width':2}, g);
+    const plateG = svgEl('g',{transform:`translate(${pivotX},0)`}, g);
+    if(plateType==='solid'){
+      svgEl('rect',{x:-20,y:170,width:40,height:60,rx:6,fill:'#8a5a34',stroke:'#c9895a','stroke-width':2}, plateG);
+    } else {
+      for(let i=0;i<5;i++){
+        svgEl('rect',{x:-20+i*8,y:170,width:6,height:60,rx:2,fill:'#2a5a48',stroke:'#5aa080','stroke-width':1}, plateG);
+      }
+    }
+    const ghost = svgEl('g',{opacity:0,transform:`translate(${pivotX},0)`}, g);
+    const ghostShape = plateType==='solid'
+      ? svgEl('rect',{x:-20,y:170,width:40,height:60,rx:6,fill:'#8a5a34'}, ghost)
+      : svgEl('rect',{x:-20,y:170,width:40,height:60,rx:6,fill:'#2a5a48'}, ghost);
+    return {g, rod, plateG, ghost, pivotX};
+  }
+  const pA = makePendulum(200,'solid');
+  const pB = makePendulum(360,'slotted');
+
+  const traceLayer = svgEl('g',{opacity:.5}, svg);
+  let traceA=[], traceB=[];
+  const traceA_path = svgEl('path',{fill:'none',stroke:'#ffb36b','stroke-width':1.4,opacity:0}, traceLayer);
+  const traceB_path = svgEl('path',{fill:'none',stroke:'#7cf2c4','stroke-width':1.4,opacity:0}, traceLayer);
+
+  const state_p = { angA:0.55, angB:0.55, vA:0, vB:0, running:false, t:0, ghostA:0.55, ghostB:0.55, traceOn:false, stepMode:false };
+  const L = SIM.pendulumLength, g0 = SIM.pendulumGravity;
+
+  function fieldDamping(ang, isSolid){
+    // stronger damping near the bottom (inside the field zone)
+    const proximity = 1 - Math.min(Math.abs(ang)/0.15, 1);
+    if(proximity<=0) return 0;
+    return (isSolid? SIM.dampingSolid : SIM.dampingSlotted) * proximity;
+  }
+
+  function stepPhysics(dt){
+    const accA = -g0*Math.sin(state_p.angA);
+    const accB = -g0*Math.sin(state_p.angB);
+    state_p.vA += accA*dt; state_p.vB += accB*dt;
+    state_p.vA *= (1 - fieldDamping(state_p.angA,true));
+    state_p.vB *= (1 - fieldDamping(state_p.angB,false));
+    state_p.angA += state_p.vA*dt;
+    state_p.angB += state_p.vB*dt;
+  }
+
+  function render(){
+    const ax = pA.pivotX + Math.sin(state_p.angA)*L*0.62, ay = 20 + Math.cos(state_p.angA)*L*0.62;
+    const bx = pB.pivotX + Math.sin(state_p.angB)*L*0.62, by = 20 + Math.cos(state_p.angB)*L*0.62;
+    pA.g.setAttribute('transform', `rotate(${state_p.angA*57.3} ${pA.pivotX} 20)`);
+    pB.g.setAttribute('transform', `rotate(${state_p.angB*57.3} ${pB.pivotX} 20)`);
+    if(state_p.traceOn){
+      traceA.push(`${ax.toFixed(1)},${ay.toFixed(1)}`); traceB.push(`${bx.toFixed(1)},${by.toFixed(1)}`);
+      if(traceA.length>240) traceA.shift(); if(traceB.length>240) traceB.shift();
+      traceA_path.setAttribute('d','M'+traceA.join(' L')); traceA_path.style.opacity=.6;
+      traceB_path.setAttribute('d','M'+traceB.join(' L')); traceB_path.style.opacity=.6;
+    }
+  }
+  render();
+
+  function frame(dt){
+    if(!state_p.running || state_p.stepMode) return;
+    const sub = 4;
+    for(let i=0;i<sub;i++) stepPhysics((dt/sub)*3.2);
+    render();
+  }
+  animEngine.ticks.push(guardTick(root, frame));
+
+  // controls
+  const controls = el('div', null, root);
+  controls.style.cssText='display:flex;gap:10px;flex-wrap:wrap;justify-content:center;max-width:600px;';
+  function ctrlBtn(label, svgHtml){
+    const b = el('button','btn-secondary-lg', controls);
+    b.style.cssText='min-height:52px;padding:0 18px;font-size:14px;gap:8px;';
+    b.innerHTML = svgHtml + `<span>${label}</span>`;
+    return b;
+  }
+  const playBtn = ctrlBtn('ابدأ التجربة','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4l14 8-14 8V4z"/></svg>');
+  const pauseBtn = ctrlBtn('إيقاف مؤقت','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>');
+  const stepBtn = ctrlBtn('خطوة','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l8 8-8 8V4z"/><line x1="18" y1="4" x2="18" y2="20"/></svg>');
+  const resetBtn = ctrlBtn('إعادة الضبط','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 20v-5h5"/></svg>');
+  const traceBtn = ctrlBtn('إظهار المسار','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20c4-10 12-10 16-16" stroke-dasharray="2 3"/></svg>');
+  const graphBtn = ctrlBtn('الرسم البياني','<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"/></svg>');
+
+  const speedRow = el('div', null, root);
+  speedRow.style.cssText='display:flex;gap:8px;align-items:center;';
+  ['0.25×','0.5×','1×'].forEach(label=>{
+    const b = el('button', null, speedRow);
+    b.textContent = label;
+    b.style.cssText='min-width:56px;min-height:44px;border-radius:10px;background:var(--surface-1);border:1px solid var(--border-soft);color:var(--text-secondary);font-size:13px;';
+    b.addEventListener('click', ()=>{
+      speedRow.querySelectorAll('button').forEach(x=>x.style.color='var(--text-secondary)');
+      b.style.color='var(--accent)';
+      state.animationSpeed = parseFloat(label);
+    });
+  });
+
+  playBtn.addEventListener('click', ()=>{
+    state_p.running = true; state_p.stepMode=false;
+    state_p.angA = 0.55; state_p.angB = 0.55; state_p.vA=0; state_p.vB=0;
+    traceA=[]; traceB=[];
+  });
+  pauseBtn.addEventListener('click', ()=>{ state_p.running = !state_p.running; pauseBtn.querySelector('span').textContent = state_p.running?'إيقاف مؤقت':'استئناف'; });
+  stepBtn.addEventListener('click', ()=>{ state_p.running=true; stepPhysics(0.9); stepPhysics(0.9); render(); state_p.running=false; });
+  resetBtn.addEventListener('click', ()=>{ state_p.running=false; state_p.angA=0.55; state_p.angB=0.55; state_p.vA=0; state_p.vB=0; traceA=[];traceB=[]; traceA_path.style.opacity=0; traceB_path.style.opacity=0; render(); });
+  traceBtn.addEventListener('click', ()=>{ state_p.traceOn = !state_p.traceOn; traceBtn.classList.toggle('active-tool', state_p.traceOn); traceBtn.style.borderColor = state_p.traceOn? 'var(--border-active)':'var(--border-soft)'; if(!state_p.traceOn){traceA_path.style.opacity=0; traceB_path.style.opacity=0;} });
+
+  // graph overlay (qualitative amplitude decay)
+  const graphOverlay = el('div', null, root);
+  graphOverlay.style.cssText='position:absolute;top:16px;inset-inline-start:16px;width:260px;background:var(--surface-3);border:1px solid var(--border-soft);border-radius:14px;padding:14px;display:none;backdrop-filter:blur(16px);';
+  graphOverlay.innerHTML = `<div style="font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;">تناقص السعة (نوعي)</div>`;
+  const gsvg = svgEl('svg',{viewBox:'0 0 220 100', style:'width:100%;height:auto;'});
+  graphOverlay.appendChild(gsvg);
+  svgEl('line',{x1:10,y1:90,x2:210,y2:90,stroke:'var(--border-soft)'}, gsvg);
+  svgEl('line',{x1:10,y1:10,x2:10,y2:90,stroke:'var(--border-soft)'}, gsvg);
+  const curveSolid = svgEl('path',{d:'M10,20 Q60,20 90,55 T210,88', fill:'none', stroke:'#ffb36b','stroke-width':2}, gsvg);
+  const curveSlot = svgEl('path',{d:'M10,20 Q80,25 130,45 T210,60', fill:'none', stroke:'#7cf2c4','stroke-width':2}, gsvg);
+  const legend = el('div', null, graphOverlay);
+  legend.style.cssText='display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted);';
+  legend.innerHTML = `<span><i style="display:inline-block;width:10px;height:2px;background:#ffb36b;vertical-align:middle;margin-inline-end:5px;"></i>الصفيحة الكاملة</span><span><i style="display:inline-block;width:10px;height:2px;background:#7cf2c4;vertical-align:middle;margin-inline-end:5px;"></i>الصفيحة المقطعة</span>`;
+  graphBtn.addEventListener('click', ()=>{ graphOverlay.style.display = graphOverlay.style.display==='none'?'block':'none'; });
+
+  const labelsHost = el('div', null, wrap); labelsHost.style.cssText='position:absolute;inset:0;pointer-events:none;';
+  const capA = mkFieldLabel(labelsHost,'صفيحة كاملة','#ffb36b','86%','58%');
+  const capB = mkFieldLabel(labelsHost,'صفيحة مقطعة','#7cf2c4','86%','8%');
+  capA.classList.toggle('show', state.showLabels); capB.classList.toggle('show', state.showLabels);
+
+  return {
+    syncToggles(){ capA.classList.toggle('show', state.showLabels); capB.classList.toggle('show', state.showLabels); },
+    reset(){ resetBtn.click(); },
+    replay(){ playBtn.click(); },
+  };
+}
+
+/* ---- M8: Damping — plate oscillating through field, with field ON/OFF ---- */
+function visualDamping(root, mod){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  const wrap = el('div', null, root); wrap.style.cssText='width:min(40vw,420px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 360 380', style:'width:100%;height:auto;'}, wrap);
+
+  svgEl('line',{x1:180,y1:10,x2:180,y2:60,stroke:'#5a7385','stroke-width':2}, svg);
+  svgEl('rect',{x:40,y:140,width:26,height:100,rx:5,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:53,y:135,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':11}, svg).textContent='N';
+  svgEl('rect',{x:294,y:140,width:26,height:100,rx:5,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
+  svgEl('text',{x:307,y:135,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':11}, svg).textContent='S';
+
+  const fieldG = svgEl('g',{}, svg);
+  buildFieldLines(svg,fieldG,{x0:76,x1:284,y0:150,y1:230,count:5,dir:1});
+  setGroupVisible(fieldG, state.showField);
+
+  const armG = svgEl('g',{}, svg);
+  svgEl('line',{x1:180,y1:60,x2:180,y2:190,stroke:'#5a7385','stroke-width':2}, armG);
+  const plate = svgEl('rect',{x:150,y:190,width:60,height:36,rx:6,fill:'#8a5a34',stroke:'#c9895a','stroke-width':2}, armG);
+  const eddyG = svgEl('g',{}, armG);
+  buildEddyLoops(svg, eddyG, {cx:180,cy:208,baseR:24,count:2,dir:1,color:'#7cf2c4'});
+  setGroupVisible(eddyG, state.showCurrents);
+
+  const vArrow = svgEl('line',{x1:180,y1:208,x2:230,y2:208,stroke:'#61D8FF','stroke-width':3,'marker-end':'url(#dArrowB)'}, armG);
+  const fArrow = svgEl('line',{x1:180,y1:208,x2:130,y2:208,stroke:'#FF7A6E','stroke-width':3,'marker-end':'url(#dArrowR)'}, armG);
+  const defs = svgEl('defs',{},svg);
+  const m1 = svgEl('marker',{id:'dArrowB',markerWidth:8,markerHeight:8,refX:6,refY:4,orient:'auto'},defs); svgEl('path',{d:'M0 0L8 4L0 8Z',fill:'#61D8FF'},m1);
+  const m2 = svgEl('marker',{id:'dArrowR',markerWidth:8,markerHeight:8,refX:6,refY:4,orient:'auto'},defs); svgEl('path',{d:'M0 0L8 4L0 8Z',fill:'#FF7A6E'},m2);
+
+  let angle = 0.5, vel = 0, amp = 0.5, fieldOn = true;
+  function frame(dt){
+    // sub-step the explicit-Euler integration (mirrors the pendulum scene) so a
+    // large dt (e.g. after the tab was backgrounded) can't destabilize the spring
+    const sub = 4, sdt = clamp(dt,0,0.05)/sub;
+    for(let i=0;i<sub;i++){
+      const acc = -0.02*angle;
+      vel += acc*sdt*60;
+      const damp = fieldOn ? 0.045 : 0.0015;
+      vel *= (1-damp);
+      angle += vel*sdt*60*0.05;
+    }
+    if(!Number.isFinite(angle) || !Number.isFinite(vel)){ angle = 0.5; vel = 0; }
+    angle = clamp(angle, -2, 2);
+    armG.setAttribute('transform', `rotate(${angle*40} 180 60)`);
+    const speedMag = Math.abs(vel);
+    eddyG.style.opacity = (state.showCurrents && fieldOn) ? clamp(speedMag*6,.15,1).toFixed(2) : 0;
+    vArrow.style.display = state.showLabels && speedMag>0.001 ? '':'none';
+    vArrow.setAttribute('x2', 180 + Math.sign(vel||1)*40);
+    fArrow.style.display = state.showForces && fieldOn ? '':'none';
+    fArrow.setAttribute('x2', 180 - Math.sign(vel||1)*40);
+  }
+  animEngine.ticks.push(guardTick(root, frame));
+
+  const controls = el('div', null, root);
+  controls.style.cssText='display:flex;gap:12px;align-items:center;';
+  const toggleWrap = el('div', null, controls);
+  toggleWrap.style.cssText='display:flex;align-items:center;gap:10px;background:var(--surface-1);border:1px solid var(--border-soft);padding:8px 16px;border-radius:100px;';
+  toggleWrap.innerHTML = `<span style="font-size:13px;color:var(--text-secondary);">المجال</span>`;
+  const fToggle = el('button', null, toggleWrap);
+  fToggle.style.cssText='min-width:64px;min-height:40px;border-radius:100px;background:rgba(97,216,255,.18);border:1px solid var(--border-active);color:var(--accent);font-size:13px;font-weight:600;';
+  fToggle.textContent='ON';
+  fToggle.addEventListener('click', ()=>{
+    fieldOn = !fieldOn;
+    fToggle.textContent = fieldOn?'ON':'OFF';
+    fToggle.style.background = fieldOn? 'rgba(97,216,255,.18)':'rgba(255,255,255,.05)';
+    fToggle.style.color = fieldOn? 'var(--accent)':'var(--text-muted)';
+  });
+  const kickBtn = el('button','btn-secondary-lg', controls);
+  kickBtn.style.cssText='min-height:52px;padding:0 20px;font-size:14px;';
+  kickBtn.textContent='إزاحة الصفيحة';
+  kickBtn.addEventListener('click', ()=>{ angle=0.5; vel=0; });
+
+  return {
+    syncToggles(){ setGroupVisible(fieldG, state.showField); },
+    reset(){ angle=0.5; vel=0; },
+    replay(){ angle=0.5; vel=0; },
+  };
+}
+
+/* ---- M9: Applications overview grid ---- */
+function visualApplications(root, mod){
+  root.style.cssText='width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const grid = el('div', null, root);
+  grid.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:18px;width:min(46vw,520px);';
+  const items = [
+    {t:'مكابح القطارات الحديثة',s:'ذات الوسائد الهوائية', target:'m10', icon:trainIcon()},
+    {t:'كاشفات المعادن',s:'نقاط التفتيش الأمنية والمطارات', target:'m11', icon:detectorIcon()},
+    {t:'الإشارات الضوئية',s:'السيطرة على تقاطعات الطرق', target:'m11', icon:signalIcon()},
+    {t:'الخريطة المفاهيمية',s:'كل المجالات في مخطط واحد', target:'conceptmap', icon:mapIcon()},
+  ];
+  items.forEach(it=>{
+    const card = el('button','ov-card', grid);
+    card.style.textAlign='center';
+    card.innerHTML = `<div style="width:100%;display:flex;justify-content:center;">${it.icon}</div><div class="ov-title">${it.t}</div><div style="font-size:12px;color:var(--text-muted);">${it.s}</div>`;
+    card.addEventListener('click', ()=> SceneManager.go(it.target));
+  });
+  return {};
+}
+function trainIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#61D8FF" stroke-width="1.8"><rect x="4" y="4" width="16" height="12" rx="3"/><circle cx="8" cy="19" r="1.6"/><circle cx="16" cy="19" r="1.6"/><path d="M4 10h16"/></svg>`;}
+function detectorIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#7CF2C4" stroke-width="1.8"><path d="M4 20c4-10 12-10 16 0"/><circle cx="12" cy="9" r="3"/></svg>`;}
+function signalIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FFB36B" stroke-width="1.8"><rect x="8" y="2" width="8" height="16" rx="3"/><circle cx="12" cy="6" r="1" fill="#FFB36B"/><circle cx="12" cy="10" r="1" fill="#FFB36B"/><circle cx="12" cy="14" r="1" fill="#FFB36B"/><line x1="12" y1="18" x2="12" y2="22"/></svg>`;}
+function mapIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#61D8FF" stroke-width="1.8"><circle cx="12" cy="12" r="2.4"/><path d="M12 3v4.5M12 16.5V21M3 12h4.5M16.5 12H21"/></svg>`;}
+
+/* ---- M10/M11: Train braking bay ---- */
+function visualTrain(root, mod){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  const wrap = el('div', null, root); wrap.style.cssText='width:min(56vw,700px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 640 260', style:'width:100%;height:auto;'}, wrap);
+
+  svgEl('rect',{x:0,y:200,width:640,height:8,fill:'#2a3038'}, svg);
+  for(let i=0;i<16;i++) svgEl('rect',{x:i*42,y:196,width:22,height:16,fill:'#3a4048'}, svg);
+
+  const trainG = svgEl('g',{}, svg);
+  svgEl('rect',{x:0,y:120,width:220,height:70,rx:14,fill:'#3b4a5a',stroke:'#61D8FF','stroke-width':1.4}, trainG);
+  svgEl('rect',{x:10,y:132,width:50,height:26,rx:4,fill:'#0e1826'}, trainG);
+  svgEl('rect',{x:70,y:132,width:50,height:26,rx:4,fill:'#0e1826'}, trainG);
+  svgEl('rect',{x:130,y:132,width:50,height:26,rx:4,fill:'#0e1826'}, trainG);
+  function makeWheel(cx,cy){
+    const g = svgEl('g',{}, trainG);
+    svgEl('circle',{cx,cy,r:15,fill:'#1a2028',stroke:'#5a6a78','stroke-width':3}, g);
+    svgEl('line',{x1:cx,y1:cy-11,x2:cx,y2:cy+11,stroke:'#5a6a78','stroke-width':2}, g);
+    svgEl('line',{x1:cx-11,y1:cy,x2:cx+11,y2:cy,stroke:'#5a6a78','stroke-width':2}, g);
+    return g;
+  }
+  const wheel1 = makeWheel(40,198);
+  const wheel2 = makeWheel(180,198);
+
+  // electromagnet coil near wheel2
+  const coilG = svgEl('g',{}, svg);
+  for(let i=0;i<4;i++) svgEl('ellipse',{cx:180+i*6-9,cy:198,rx:6,ry:20,fill:'none',stroke:'#61D8FF','stroke-width':1.4,opacity:.7}, coilG);
+  coilG.style.opacity=0;
+
+  const eddyG = svgEl('g',{}, svg);
+  buildEddyLoops(svg, eddyG, {cx:180,cy:198,baseR:26,count:2,dir:1,color:'#7cf2c4'});
+  eddyG.style.opacity=0;
+
+  const fArrow = svgEl('line',{x1:180,y1:198,x2:150,y2:198,stroke:'#FF7A6E','stroke-width':3,opacity:0}, svg);
+
+  let trainX = 0, speed=1.6, braking=false, wheelRot=0;
+  function frame(dt){
+    if(braking) speed *= Math.pow(SIM.trainDecel, dt*60);
+    trainX += speed*dt*60;
+    if(!braking && trainX>560) trainX = 0;
+    trainX = clamp(trainX, 0, 560);
+    trainG.setAttribute('transform', `translate(${trainX},0)`);
+    wheelRot = (wheelRot + speed*dt*160) % 360;
+    wheel1.setAttribute('transform', `rotate(${wheelRot} 40 198)`);
+    wheel2.setAttribute('transform', `rotate(${wheelRot} 180 198)`);
+    coilG.style.opacity = braking? 1:0;
+    eddyG.style.opacity = (braking && state.showCurrents) ? clamp(speed/1.6,.15,1).toFixed(2) : 0;
+    eddyG.setAttribute('transform', `translate(${trainX},0)`);
+    fArrow.style.opacity = (braking && state.showForces)?1:0;
+    fArrow.setAttribute('x1', 180+trainX); fArrow.setAttribute('x2', 180+trainX-30*clamp(speed,0.2,1));
+  }
+  animEngine.ticks.push(guardTick(root, frame));
+
+  const controls = el('div', null, root);
+  controls.style.cssText='display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;';
+  const brakeBtn = el('button','btn-primary-lg', controls);
+  brakeBtn.style.cssText='min-height:56px;padding:0 26px;font-size:16px;';
+  brakeBtn.innerHTML='<span>تفعيل المكابح</span>';
+  const resetBtn2 = el('button','btn-secondary-lg', controls);
+  resetBtn2.style.cssText='min-height:56px;padding:0 22px;font-size:14px;';
+  resetBtn2.textContent='إعادة الضبط';
+  brakeBtn.addEventListener('click', ()=>{ braking = true; });
+  resetBtn2.addEventListener('click', ()=>{ braking=false; speed=1.6; trainX=0; });
+
+  const timelineWrap = el('div', null, root);
+  timelineWrap.style.cssText='display:flex;gap:26px;font-size:12.5px;color:var(--text-muted);';
+  timelineWrap.innerHTML = `<span>قبل: <b style="color:var(--text-secondary)">مكابح متوقفة — لا مجال، لا تيارات دوامة</b></span><span>بعد: <b style="color:var(--accent-2)">مكابح فعّالة — مجال قوي وتيارات دوامة كابحة</b></span>`;
+
+  return {
+    syncToggles(){},
+    reset(){ braking=false; speed=1.6; trainX=0; },
+    replay(){ braking=false; speed=1.6; trainX=0; },
+  };
+}
+
+/* ---- M12 reuse (اذكر مجالين) shares 'applications' visual ---- */
+
+/* ---- Metal detector scene ---- */
+function visualDetector(root, mod){
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  const wrap = el('div', null, root); wrap.style.cssText='width:min(44vw,480px);position:relative;';
+  const svg = svgEl('svg',{viewBox:'0 0 420 340', style:'width:100%;height:auto;'}, wrap);
+
+  svgEl('line',{x1:210,y1:10,x2:210,y2:110,stroke:'#5a7385','stroke-width':4}, svg);
+  for(let i=0;i<5;i++) svgEl('ellipse',{cx:210,cy:120+i*4,rx:70-i*2,ry:14,fill:'none',stroke:'#61D8FF','stroke-width':1.6,opacity:.65}, svg);
+  svgEl('text',{x:210,y:100,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':12}, svg).textContent='ملف الإرسال / الاستقبال';
+
+  const groundG = svgEl('g',{}, svg);
+  svgEl('rect',{x:20,y:190,width:380,height:120,fill:'#1a2418',opacity:.9}, groundG);
+  for(let i=0;i<10;i++) svgEl('line',{x1:20+i*40,y1:190,x2:20+i*40-14,y2:310,stroke:'#243421','stroke-width':1}, groundG);
+
+  const wavesG = svgEl('g',{}, svg);
+  const waves=[];
+  for(let i=0;i<3;i++){
+    const w = svgEl('ellipse',{cx:210,cy:170,rx:40+i*22,ry:16+i*7,fill:'none',stroke:'#61D8FF','stroke-width':1.4,opacity:.5-i*0.12}, wavesG);
+    waves.push(w);
+  }
+
+  const object = svgEl('g',{cursor:'grab'}, svg);
+  const objShape = svgEl('circle',{cx:210,cy:250,r:12,fill:'#d9895a',stroke:'#f0a870','stroke-width':2}, object);
+  const objEddy = svgEl('g',{}, object);
+  buildEddyLoops(svg, objEddy, {cx:210,cy:250,baseR:16,count:1,dir:1,color:'#7cf2c4'});
+
+  let objY = 250, dragging=false;
+  function updateSignal(){
+    const dist = clamp(objY-170, 30, 170);
+    const strength = clamp(1 - (dist-30)/140, 0.02, 1);
+    meterFill.style.width = Math.round(strength*100)+'%';
+    objEddy.style.opacity = state.showCurrents ? strength.toFixed(2):0;
+    wavesG.style.opacity = state.showField? 1:0;
+  }
+  object.addEventListener('pointerdown', e=>{ dragging=true; object.setPointerCapture(e.pointerId); });
+  object.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const r = svg.getBoundingClientRect();
+    const scale=340/r.height;
+    objY = clamp((e.clientY-r.top)*scale, 180, 310);
+    object.setAttribute('transform', `translate(0,${objY-250})`);
+    updateSignal();
+  });
+  object.addEventListener('pointerup', ()=> dragging=false);
+
+  const xray = el('button', null, root);
+  xray.className='btn-secondary-lg';
+  xray.style.cssText='min-height:52px;padding:0 20px;font-size:14px;';
+  xray.textContent='عرض داخلي (Cutaway)';
+  let cut=false;
+  xray.addEventListener('click', ()=>{ cut=!cut; groundG.style.opacity = cut? .35:.9; xray.style.color = cut? 'var(--accent)':'var(--text-primary)'; });
+
+  const meterWrap = el('div', null, root);
+  meterWrap.style.cssText='width:min(44vw,480px);';
+  const label = el('div', null, meterWrap); label.textContent='قوة الإشارة (نسبية)'; label.style.cssText='font-size:12.5px;color:var(--text-secondary);margin-bottom:8px;';
+  const track = el('div','meter-track', meterWrap); track.style.height='14px';
+  var meterFill = el('div','meter-fill current', track);
+  const note = el('div','meter-note', meterWrap); note.textContent='اسحب الجسم المعدني رأسيًا لتغيير المسافة عن الملف — القيم تمثيلية فقط.';
+  updateSignal();
+
+  return { syncToggles(){ updateSignal(); }, reset(){ objY=250; object.setAttribute('transform',''); updateSignal(); }, replay(){} };
+}
+
+/* =========================================================================
+   VISUAL DISPATCH TABLE
+   ========================================================================= */
+const VISUALS = {
+  induction:visualInduction, lamination:visualLamination, plate:visualPlate,
+  ring:visualRing, pendulum:visualPendulum, damping:visualDamping,
+  applications:visualApplications, train:visualTrain, detector:visualDetector,
+};
+
+/* =========================================================================
+   REGISTER CONTENT SCENES
+   ========================================================================= */
+CONTENT.forEach(mod=>{
+  SceneManager.register({
+    id:mod.id, num:mod.num, title:mod.title, group:mod.group, el:null, built:false,
+    build(container){
+      const api = buildTeachingScene(container, mod, VISUALS[mod.visual]);
+      container.__api = api;
+    },
+    enter(){ this.el.__api?.reset?.(); },
+    pause(){},
+  });
+});
+
+/* =========================================================================
+   HOME SCENE
+   ========================================================================= */
+SceneManager.register({
+  id:'home', title:'الرئيسية', el:null, built:false,
+  build(container){
+    container.classList.add('home-scene');
+    const core = el('div','home-core', container);
+    const ringWrap = el('div','home-ring-wrap', core);
+    const svg = svgEl('svg',{viewBox:'0 0 300 300'}, ringWrap);
+    const defs = svgEl('defs',{},svg);
+    const glow = svgEl('radialGradient',{id:'ringGlow',cx:'50%',cy:'50%',r:'50%'},defs);
+    svgEl('stop',{offset:'0%','stop-color':'#61D8FF','stop-opacity':.35},glow);
+    svgEl('stop',{offset:'100%','stop-color':'#61D8FF','stop-opacity':0},glow);
+    svgEl('circle',{cx:150,cy:150,r:120,fill:'url(#ringGlow)'}, svg);
+    svgEl('circle',{cx:150,cy:150,r:96,fill:'none',stroke:'rgba(150,210,255,.28)','stroke-width':10}, svg);
+    svgEl('circle',{cx:150,cy:150,r:96,fill:'none',stroke:'#61D8FF','stroke-width':2,'stroke-dasharray':'3 10',opacity:.7}, svg);
+    const loopG = svgEl('g',{}, svg);
+    for(let i=0;i<3;i++){
+      const r = 62 - i*16;
+      const d = ellipseToPath(150,150,r,r*0.42);
+      const path = svgEl('path',{d,fill:'none',stroke:'#7CF2C4','stroke-width':1.6,opacity:(0.8-i*0.18).toFixed(2)}, loopG);
+      const dot = svgEl('circle',{r:3,fill:'#7CF2C4'}, loopG);
+      animEngine.addParticle({path,dot,rate:.3+i*.08,dir:i%2?1:-1,active:true,t:i/3});
+    }
+    ringWrap.style.animationDuration = '9s';
+    svg.style.animation = 'spin 60s linear infinite';
+    const styleSpin = document.createElement('style');
+    styleSpin.textContent = '@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}';
+    document.head.appendChild(styleSpin);
+
+    const kicker = el('div','home-kicker', core); kicker.textContent='الفيزياء — السادس الإعدادي العلمي';
+    const title = el('h1','home-title', core); title.textContent='التيارات الدوامة';
+    const sub = el('p','home-sub', core); sub.innerHTML='الأستاذ <b>باقر أنيس العقابي</b>';
+
+    const actions = el('div','home-actions', core);
+    const startBtn = el('button','btn-primary-lg', actions);
+    startBtn.innerHTML = `<span>ابدأ الدرس</span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>`;
+    startBtn.addEventListener('click', ()=> SceneManager.go('m1'));
+    const ovBtn = el('button','btn-secondary-lg', actions);
+    ovBtn.innerHTML = `<span>استعراض المحتوى</span>`;
+    ovBtn.addEventListener('click', ()=> SceneManager.go('overview'));
+
+    const hint = el('div','home-fs-hint', container);
+    hint.innerHTML = `<span><kbd>F</kbd> ملء الشاشة</span><span><kbd>→</kbd> التالي</span><span><kbd>H</kbd> إخفاء الواجهة</span>`;
+  },
+  enter(){ document.body.classList.remove('scene-dim'); },
+});
+
+/* =========================================================================
+   OVERVIEW SCENE
+   ========================================================================= */
+SceneManager.register({
+  id:'overview', title:'استعراض المحتوى', el:null, built:false,
+  build(container){
+    container.classList.add('overview-scene');
+    const head = el('div','overview-head', container);
+    head.innerHTML = `<h2>استعراض المحتوى</h2><p>اضغط على أي وحدة للانتقال إليها مباشرة</p>`;
+    const grid = el('div','overview-grid', container);
+    CONTENT.forEach(m=>{
+      const card = el('button','ov-card', grid);
+      card.innerHTML = `<span class="ov-num"><span style="direction:ltr;unicode-bidi:isolate;">${String(m.num).padStart(2,'0')} / 12</span> · ${APP_TITLE_BY_GROUP[m.group]}</span><span class="ov-title">${m.title}</span>`;
+      card.addEventListener('click', ()=> SceneManager.go(m.id));
+    });
+  },
+});
+
+/* =========================================================================
+   CONCEPT MAP SCENE
+   ========================================================================= */
+SceneManager.register({
+  id:'conceptmap', title:'الخريطة المفاهيمية', el:null, built:false,
+  build(container){
+    container.style.cssText='display:flex;align-items:center;justify-content:center;padding:30px;';
+    const wrap = el('div', null, container); wrap.style.cssText='width:min(70vw,900px);';
+    const svg = svgEl('svg',{viewBox:'0 0 900 520', style:'width:100%;height:auto;'}, wrap);
+
+    const chain = ['تغيّر الفيض','قوة دافعة مستحثة','تيارات دوامية','مجال مغناطيسي مستحث','مقاومة سبب التغيّر'];
+    const chainIds = ['m1','m5','m1','m5','m8'];
+    const nodes=[];
+    chain.forEach((t,i)=>{
+      const x = 450, y = 40 + i*60;
+      if(i>0){ svgEl('line',{x1:450,y1:40+(i-1)*60+18,x2:450,y2:y-18,stroke:'var(--border-soft)','stroke-width':2}, svg); }
+      const g = svgEl('g',{style:'cursor:pointer'}, svg);
+      const rect = svgEl('rect',{x:x-110,y:y-18,width:220,height:36,rx:18,fill:'var(--surface-2)',stroke:'var(--border-soft)'}, g);
+      const text = svgEl('text',{x,y:y+5,'text-anchor':'middle',fill:'var(--text-primary)','font-size':14}, g); text.textContent=t;
+      g.addEventListener('click', ()=> SceneManager.go(chainIds[i]));
+      g.addEventListener('mouseenter', ()=> rect.setAttribute('stroke','var(--border-active)'));
+      g.addEventListener('mouseleave', ()=> rect.setAttribute('stroke','var(--border-soft)'));
+      nodes.push(g);
+    });
+
+    const branches = [['خسائر حرارية','m2'],['التخميد','m8'],['المكابح','m10'],['كشف المعادن','m11']];
+    const startY = 40+4*60;
+    branches.forEach(([t,id],i)=>{
+      const bx = 150 + i*220;
+      svgEl('line',{x1:450,y1:startY+18,x2:bx,y2:420,stroke:'var(--border-soft)','stroke-width':2}, svg);
+      const g = svgEl('g',{style:'cursor:pointer'}, svg);
+      const rect = svgEl('rect',{x:bx-85,y:420,width:170,height:38,rx:19,fill:'rgba(97,216,255,.08)',stroke:'var(--border-active)'}, g);
+      const text = svgEl('text',{x:bx,y:444,'text-anchor':'middle',fill:'var(--accent)','font-size':13.5}, g); text.textContent=t;
+      g.addEventListener('click', ()=> SceneManager.go(id));
+      nodes.push(g);
+    });
+    const centerLabel = svgEl('text',{x:450,y:500,'text-anchor':'middle',fill:'var(--text-muted)','font-size':13}, svg);
+    centerLabel.textContent='التيارات الدوامة — اضغط على أي مفهوم للانتقال إلى مشهده';
+  },
+});
+
+/* =========================================================================
+   SUMMARY SCENE
+   ========================================================================= */
+SceneManager.register({
+  id:'summary', title:'المشهد الختامي', el:null, built:false,
+  build(container){
+    container.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;padding:30px;';
+    const svg = svgEl('svg',{viewBox:'0 0 700 460', style:'width:min(64vw,760px);height:auto;'}, container);
+    svgEl('circle',{cx:350,cy:230,r:70,fill:'rgba(97,216,255,.1)',stroke:'var(--border-active)','stroke-width':2}, svg);
+    svgEl('text',{x:350,y:225,'text-anchor':'middle',fill:'var(--text-primary)','font-size':20,'font-weight':700}, svg).textContent='التيارات';
+    svgEl('text',{x:350,y:248,'text-anchor':'middle',fill:'var(--text-primary)','font-size':20,'font-weight':700}, svg).textContent='الدوامة';
+    const branches = [
+      {t:'النشوء',a:0, id:'m1'},{t:'الضرر',a:60, id:'m2'},{t:'التقليل',a:120, id:'m3'},
+      {t:'التخميد',a:180, id:'m8'},{t:'المكابح',a:240, id:'m10'},{t:'الكشف',a:300, id:'m11'},
+    ];
+    branches.forEach(b=>{
+      const rad = b.a*Math.PI/180;
+      const x = 350+Math.cos(rad)*190, y = 230+Math.sin(rad)*190;
+      svgEl('line',{x1:350+Math.cos(rad)*72,y1:230+Math.sin(rad)*72,x2:x,y2:y,stroke:'var(--border-soft)','stroke-width':2}, svg);
+      const g = svgEl('g',{style:'cursor:pointer'}, svg);
+      const c = svgEl('circle',{cx:x,cy:y,r:44,fill:'var(--surface-2)',stroke:'var(--border-soft)','stroke-width':2}, g);
+      const t = svgEl('text',{x,y:y+5,'text-anchor':'middle',fill:'var(--text-primary)','font-size':14,'font-weight':600}, g); t.textContent=b.t;
+      g.addEventListener('mouseenter', ()=>{ c.setAttribute('stroke','var(--border-active)'); c.setAttribute('r',48);});
+      g.addEventListener('mouseleave', ()=>{ c.setAttribute('stroke','var(--border-soft)'); c.setAttribute('r',44);});
+      g.addEventListener('click', ()=> SceneManager.go(b.id));
+    });
+    const quizBtn = el('button','btn-primary-lg', container);
+    quizBtn.innerHTML = '<span>ابدأ تدريبًا إضافيًا</span>';
+    quizBtn.addEventListener('click', ()=> SceneManager.go('quiz'));
+  },
+});
+
+/* =========================================================================
+   QUIZ SCENE ("تدريب إضافي" — clearly separate from ministry questions)
+   ========================================================================= */
+const QUIZ = [
+  {q:'ما اتجاه المجال المغناطيسي المحتث الناتج عن التيارات الدوامة وفقًا لقانون لنز؟', options:['بنفس اتجاه المجال المسبب','معاكس لاتجاه المجال المسبب','عمودي دائمًا على المجال المسبب'], correct:1},
+  {q:'لماذا يُصنع قلب المحول من صفائح معزولة بدل قطعة واحدة؟', options:['لتقليل الوزن فقط','لزيادة المقاومة الكهربائية وتقليل التيارات الدوامة','لتحسين المظهر'], correct:1},
+  {q:'الصفيحة المقطعة (أسنان المشط) تهتز مقارنة بالصفيحة الكاملة:', options:['بنفس المدة تمامًا','لمدة أطول لأن التيارات فيها أصغر','لا تهتز إطلاقًا'], correct:1},
+  {q:'مكابح القطارات الحديثة التي تستثمر التيارات الدوامة تعمل عبر:', options:['احتكاك ميكانيكي مباشر فقط','مجال مغناطيسي يولّد تيارات دوامة معرقلة للحركة','تبريد العجلات'], correct:1},
+  {q:'كاشف المعادن يكتشف الجسم المعدني من خلال:', options:['وزن الجسم','تيارات دوامة تُحدث تغيّرًا في الإشارة المستقبَلة','لون الجسم'], correct:1},
+];
+SceneManager.register({
+  id:'quiz', title:'تدريب إضافي', el:null, built:false,
+  build(container){
+    container.style.cssText='display:flex;align-items:center;justify-content:center;padding:30px;';
+    const card = el('div', null, container);
+    card.style.cssText='width:min(50vw,640px);background:var(--surface-1);border:1px solid var(--border-soft);border-radius:var(--radius-lg);padding:36px;';
+    const badge = el('div','module-tag', card); badge.textContent='تدريب إضافي — ليس من أسئلة الملزمة الوزارية';
+    const qHost = el('div', null, card);
+    const nav = el('div', null, card); nav.style.cssText='display:flex;justify-content:space-between;margin-top:22px;align-items:center;';
+    const progress = el('span', null, nav); progress.style.cssText='font-size:13px;color:var(--text-muted);';
+    const nextBtn = el('button','btn-primary-lg', nav); nextBtn.style.cssText='min-height:52px;padding:0 26px;font-size:15px;'; nextBtn.textContent='التالي';
+
+    let qi=0, score=0, answered=false;
+    function renderQ(){
+      answered=false;
+      qHost.innerHTML='';
+      if(qi>=QUIZ.length){
+        qHost.innerHTML = `<h2 class="scene-h1">النتيجة: ${score} / ${QUIZ.length}</h2><p style="color:var(--text-secondary);font-size:16px;">أحسنت! يمكنك إعادة التدريب أو العودة إلى الملخص.</p>`;
+        nextBtn.textContent='إعادة التدريب';
+        progress.textContent='';
+        nextBtn.onclick = ()=>{ qi=0; score=0; renderQ(); };
+        return;
+      }
+      const item = QUIZ[qi];
+      const qEl = el('div','qa-question', qHost); qEl.textContent = item.q; qEl.style.marginBottom='18px';
+      item.options.forEach((opt,oi)=>{
+        const b = el('button', null, qHost);
+        b.textContent = opt;
+        b.style.cssText='display:block;width:100%;text-align:start;padding:14px 18px;margin-bottom:10px;min-height:56px;border-radius:12px;background:var(--surface-1);border:1px solid var(--border-soft);color:var(--text-secondary);font-size:15px;transition:all .2s;';
+        b.addEventListener('click', ()=>{
+          if(answered) return; answered=true;
+          const correct = oi===item.correct;
+          if(correct) score++;
+          b.style.borderColor = correct? 'var(--accent-2)':'var(--accent-danger)';
+          b.style.color = correct? 'var(--accent-2)':'var(--accent-danger)';
+          if(!correct){ const rightBtn = qHost.querySelectorAll('button')[item.correct]; rightBtn.style.borderColor='var(--accent-2)'; rightBtn.style.color='var(--accent-2)'; }
+        });
+        qHost.appendChild(b);
+      });
+      progress.textContent = `${qi+1} / ${QUIZ.length}`;
+      nextBtn.textContent = qi===QUIZ.length-1 ? 'إنهاء':'التالي';
+      nextBtn.onclick = ()=>{ qi++; renderQ(); };
+    }
+    renderQ();
+  },
+});
+
+/* =========================================================================
+   EXTRA DEDICATED EXPERIMENT SCENES (plate-drag / ring-sim standalone)
+   ========================================================================= */
+SceneManager.register({
+  id:'plate-drag', num:null, title:'محاكاة: سحب الصفيحة', group:'experiment', el:null, built:false,
+  build(container){
+    container.classList.add('teaching-scene');
+    const visual = el('div','scene-visual', container);
+    const panel = el('div','scene-panel', container);
+    el('div','module-tag', panel).textContent='محاكاة تفاعلية';
+    el('h2','scene-h1', panel).textContent='سحب صفيحة نحاسية بين قطبي مغناطيس';
+    const p = el('p', null, panel); p.style.cssText='color:var(--text-secondary);font-size:16px;line-height:1.9;';
+    p.textContent = 'اسحب الصفيحة يدويًا أو استخدم شريط التحكم بالسرعة، ولاحظ كيف تزداد شدة التيارات الدوامة المتمثَّلة بصريًا كلما زادت سرعة السحب.';
+    container.__api = buildPlateRig(visual);
+  },
+  enter(){ this.el.__api?.reset?.(); },
+});
+SceneManager.register({
+  id:'ring-sim', num:null, title:'محاكاة: الحلقة النحاسية', group:'experiment', el:null, built:false,
+  build(container){
+    container.classList.add('teaching-scene');
+    const visual = el('div','scene-visual', container);
+    const panel = el('div','scene-panel', container);
+    el('div','module-tag', panel).textContent='محاكاة تفاعلية';
+    el('h2','scene-h1', panel).textContent='حلقة نحاسية تُسحب عبر مجال منتظم';
+    const p = el('p', null, panel); p.style.cssText='color:var(--text-secondary);font-size:16px;line-height:1.9;';
+    p.textContent = 'راقب نشوء التيارات الدوامة على محيط الحلقة أثناء عبورها بين قطبي المغناطيس، والمجال المغناطيسي المستحث المعاكس الناتج عنها.';
+    container.__api = buildRingRig(visual);
+  },
+  enter(){ this.el.__api?.reset?.(); },
+});
+
+/* =========================================================================
+   TOOLBAR WIRING (teaching tools rail)
+   ========================================================================= */
+function toggleRailBtn(id, key, onChange){
+  const btn = document.getElementById(id);
+  btn.classList.toggle('active', state[key]);
+  btn.addEventListener('click', ()=>{
+    state[key] = !state[key];
+    btn.classList.toggle('active', state[key]);
+    onChange && onChange();
+    syncActiveVisual();
+  });
+}
+function syncActiveVisual(){
+  SceneManager.current?.el?.__api?.syncToggles?.();
+}
+toggleRailBtn('tool-text','showText', ()=>{ document.querySelectorAll('.scene-panel').forEach(p=> p.style.display = state.showText? '':'none'); });
+toggleRailBtn('tool-labels','showLabels');
+toggleRailBtn('tool-field','showField');
+toggleRailBtn('tool-currents','showCurrents');
+toggleRailBtn('tool-forces','showForces');
+
+document.getElementById('tool-replay').addEventListener('click', ()=> SceneManager.current?.el?.__api?.replay?.());
+document.getElementById('tool-reset').addEventListener('click', ()=> SceneManager.current?.el?.__api?.reset?.());
+
+const pauseBtnEl = document.getElementById('tool-pause');
+pauseBtnEl.classList.add('active');
+pauseBtnEl.addEventListener('click', ()=>{
+  state.paused = !state.paused;
+  pauseBtnEl.classList.toggle('active', !state.paused);
+  document.getElementById('icon-pause').innerHTML = state.paused
+    ? '<path d="M8 5l11 7-11 7V5z"/>'
+    : '<rect x="7" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>';
+});
+const slowBtn = document.getElementById('tool-slowmo');
+slowBtn.addEventListener('click', ()=>{
+  const active = slowBtn.classList.toggle('active');
+  state.animationSpeed = active ? 0.35 : 1;
+});
+
+const questionBtn = document.getElementById('tool-question');
+questionBtn.addEventListener('click', ()=>{
+  state.questionMode = !state.questionMode;
+  questionBtn.classList.toggle('active', state.questionMode);
+  document.body.classList.toggle('question-mode', state.questionMode);
+  document.getElementById('tool-reveal-answer').style.display = state.questionMode? 'grid':'none';
+});
+document.getElementById('tool-reveal-answer').addEventListener('click', ()=>{
+  SceneManager.current?.el?.__panel?.__revealAll?.();
+});
+
+const focusBtn = document.getElementById('tool-focus');
+focusBtn.addEventListener('click', ()=> setFocusMode(!state.focusMode));
+function setFocusMode(v){
+  state.focusMode = v;
+  document.body.classList.toggle('focus-mode', v);
+  focusBtn.classList.toggle('active', v);
+}
+document.addEventListener('click', (e)=>{
+  if(state.focusMode && !e.target.closest('.rail')) setFocusMode(false);
+});
+
+/* Fullscreen */
+const fsBtn = document.getElementById('btn-fullscreen');
+fsBtn.addEventListener('click', ()=>{
+  try{
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.().catch(()=>{}); }
+    else { document.exitFullscreen?.().catch(()=>{}); }
+  }catch(e){ /* graceful fallback: no-op */ }
+});
+
+/* Hide UI */
+const hideBtn = document.getElementById('btn-hide-ui');
+hideBtn.addEventListener('click', ()=> setUIHidden(!state.uiHidden));
+function setUIHidden(v){
+  state.uiHidden = v;
+  document.body.classList.toggle('ui-hidden', v);
+}
+
+/* Nav rail collapse */
+document.getElementById('nav-collapse').addEventListener('click', ()=>{
+  state.navCollapsed = !state.navCollapsed;
+  document.body.classList.toggle('nav-collapsed', state.navCollapsed);
+});
+
+/* Teacher / Student mode */
+function setTeacherMode(isTeacher){
+  state.teacherMode = isTeacher;
+  document.getElementById('btn-teacher-mode').classList.toggle('active', isTeacher);
+  document.getElementById('btn-student-mode').classList.toggle('active', !isTeacher);
+  document.getElementById('btn-teacher-mode').setAttribute('aria-selected', isTeacher);
+  document.getElementById('btn-student-mode').setAttribute('aria-selected', !isTeacher);
+  document.body.classList.toggle('question-mode', !isTeacher || state.questionMode);
+  document.querySelectorAll('.rail-tools .rail-btn').forEach((b,i)=>{
+    // in student view, hide most authoring tools except pause/reset feel — keep it simple & robust:
+  });
+  document.querySelector('.rail-tools').style.opacity = isTeacher ? '' : (state.navCollapsed?0:1);
+  document.querySelector('.rail-tools').style.pointerEvents = isTeacher ? '' : (isTeacher?'auto':'none');
+  if(!isTeacher){
+    document.body.classList.add('question-mode-student-hint');
+    document.querySelectorAll('.scene-panel .module-nav-btns').forEach(b=> b.style.display = isTeacher?'':'none');
+  } else {
+    document.querySelectorAll('.scene-panel .module-nav-btns').forEach(b=> b.style.display='');
+  }
+}
+document.getElementById('btn-teacher-mode').addEventListener('click', ()=> setTeacherMode(true));
+document.getElementById('btn-student-mode').addEventListener('click', ()=> setTeacherMode(false));
+
+/* =========================================================================
+   ANNOTATION LAYER
+   ========================================================================= */
+(function annotate(){
+  const canvas = document.getElementById('annotate-canvas');
+  const ctx = canvas.getContext('2d');
+  let drawing=false, tool='pen', color='#61D8FF', lastX=0, lastY=0;
+  function resize(){
+    const img = ctx.getImageData ? null : null;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function pos(e){
+    const t = e.touches? e.touches[0]:e;
+    return {x:t.clientX, y:t.clientY};
+  }
+  canvas.addEventListener('pointerdown', e=>{
+    drawing=true; const p = pos(e); lastX=p.x; lastY=p.y;
+  });
+  canvas.addEventListener('pointermove', e=>{
+    if(!drawing) return;
+    const p = pos(e);
+    ctx.strokeStyle = tool==='eraser' ? 'rgba(0,0,0,1)' : color;
+    ctx.globalCompositeOperation = tool==='eraser' ? 'destination-out' : 'source-over';
+    ctx.lineWidth = tool==='eraser' ? 26 : 4;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.stroke();
+    lastX=p.x; lastY=p.y;
+  });
+  window.addEventListener('pointerup', ()=> drawing=false);
+
+  const toolBtn = document.getElementById('tool-annotate');
+  toolBtn.addEventListener('click', ()=>{
+    const on = document.body.classList.toggle('annotate-active');
+    toolBtn.classList.toggle('active', on);
+  });
+  document.getElementById('an-pen').addEventListener('click', function(){ tool='pen'; this.classList.add('active'); document.getElementById('an-eraser').classList.remove('active'); });
+  document.getElementById('an-eraser').addEventListener('click', function(){ tool='eraser'; this.classList.add('active'); document.getElementById('an-pen').classList.remove('active'); });
+  document.querySelectorAll('.annotate-color').forEach(sw=> sw.addEventListener('click', ()=>{ color = sw.dataset.color; }));
+  document.getElementById('an-clear').addEventListener('click', ()=> ctx.clearRect(0,0,canvas.width,canvas.height));
+  document.getElementById('an-close').addEventListener('click', ()=>{
+    document.body.classList.remove('annotate-active');
+    toolBtn.classList.remove('active');
+  });
+})();
+
+/* =========================================================================
+   LASER POINTER
+   ========================================================================= */
+(function laser(){
+  const dot = document.getElementById('laser-dot');
+  const btn = document.getElementById('tool-laser');
+  btn.addEventListener('click', ()=>{
+    const on = document.body.classList.toggle('laser-active');
+    btn.classList.toggle('active', on);
+  });
+  window.addEventListener('pointermove', e=>{
+    if(!document.body.classList.contains('laser-active')) return;
+    dot.style.left = e.clientX+'px'; dot.style.top = e.clientY+'px';
+  });
+})();
+
+/* =========================================================================
+   KEYBOARD SHORTCUTS
+   ========================================================================= */
+window.addEventListener('keydown', (e)=>{
+  if(e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  const idx = CONTENT.findIndex(m=>m.id===state.scene);
+  switch(e.key){
+    case 'ArrowRight': case ' ':
+      e.preventDefault();
+      if(idx>=0 && idx<CONTENT.length-1) SceneManager.go(CONTENT[idx+1].id);
+      else if(state.scene==='home') SceneManager.go('m1');
+      break;
+    case 'ArrowLeft':
+      if(idx>0) SceneManager.go(CONTENT[idx-1].id);
+      break;
+    case 'f': case 'F': fsBtn.click(); break;
+    case 'h': case 'H': hideBtn.click(); break;
+    case 'r': case 'R': document.getElementById('tool-reset').click(); break;
+    case 'p': case 'P': pauseBtnEl.click(); break;
+    case 's': case 'S': setTeacherMode(false); break;
+    case 't': case 'T': setTeacherMode(true); break;
+    case 'Escape': if(state.focusMode) setFocusMode(false); break;
+  }
+});
+
+/* =========================================================================
+   TOUCH SWIPE (horizontal)
+   ========================================================================= */
+(function swipe(){
+  let sx=0, sy=0;
+  document.getElementById('stage').addEventListener('touchstart', e=>{
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, {passive:true});
+  document.getElementById('stage').addEventListener('touchend', e=>{
+    const dx = e.changedTouches[0].clientX - sx;
+    const dy = e.changedTouches[0].clientY - sy;
+    if(Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy)) return;
+    const idx = CONTENT.findIndex(m=>m.id===state.scene);
+    if(idx<0) return;
+    if(dx < 0 && idx < CONTENT.length-1) SceneManager.go(CONTENT[idx+1].id); // RTL: swipe left = next
+    if(dx > 0 && idx > 0) SceneManager.go(CONTENT[idx-1].id);
+  }, {passive:true});
+})();
+
+/* =========================================================================
+   SCENE-DIM (darken cosmic background while in a teaching scene)
+   ========================================================================= */
+const _origGo = SceneManager.go.bind(SceneManager);
+SceneManager.go = function(id, opts){
+  _origGo(id, opts);
+  document.body.classList.toggle('scene-dim', id !== 'home');
+};
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+function boot(){
+  SceneManager.init(document.getElementById('stage'));
+  buildTimeline();
+  buildFlyouts();
+  SceneManager.go('home', {force:true});
+
+  // simulate brief asset/init progress for the loading screen
+  const fill = document.getElementById('load-fill');
+  let p = 0;
+  const iv = setInterval(()=>{
+    p += Math.random()*22+10;
+    fill.style.width = Math.min(p,100)+'%';
+    if(p>=100){
+      clearInterval(iv);
+      setTimeout(()=>{
+        document.getElementById('loading').classList.add('hide');
+      }, 220);
+    }
+  }, 140);
+}
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
