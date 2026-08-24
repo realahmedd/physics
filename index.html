@@ -2227,17 +2227,17 @@ function visualTrain(root, mod){
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = 1.35;
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x081321, 10, 24);
+  scene.fog = new THREE.Fog(0x081321, 12, 26);
 
-  const camera = new THREE.PerspectiveCamera(36, 20/9, 0.1, 100);
-  camera.position.set(1.5, 1.5, 7.0);
-  camera.lookAt(0, 0.15, 0);
+  const camera = new THREE.PerspectiveCamera(32, 20/9, 0.1, 100);
+  camera.position.set(0.95, 1.0, 4.85);
+  camera.lookAt(-0.05, 0.2, 0.08);
 
-  scene.add(new THREE.HemisphereLight(0x6fa8dc, 0x0a1420, 0.85));
-  const keyLight = new THREE.DirectionalLight(0x9fd8ff, 2.2);
+  scene.add(new THREE.HemisphereLight(0x8fc4ea, 0x0a1420, 1.05));
+  const keyLight = new THREE.DirectionalLight(0x9fd8ff, 2.5);
   keyLight.position.set(-3, 5, 4);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(1024, 1024);
@@ -2245,11 +2245,16 @@ function visualTrain(root, mod){
   keyLight.shadow.camera.left = -6; keyLight.shadow.camera.right = 6;
   keyLight.shadow.camera.top = 4; keyLight.shadow.camera.bottom = -4;
   scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  const fillLight = new THREE.DirectionalLight(0xbfe6ff, 1.05);
   fillLight.position.set(3, 1.5, 3);
   scene.add(fillLight);
-  const brakeGlow = new THREE.PointLight(0xff7a6e, 0, 4);
-  brakeGlow.position.set(0.75, 0.05, 0.4);
+  const noseRim = new THREE.DirectionalLight(0x61D8FF, 0.55);
+  noseRim.position.set(4, 0.6, -1.5);
+  scene.add(noseRim);
+  // warm point light = the brake unit's own "point of effect" glow, not a
+  // generic light — stays off (intensity 0) until braking is engaged
+  const brakeGlow = new THREE.PointLight(0xffb36b, 0, 3.2);
+  brakeGlow.position.set(0.62, -0.05, 0.5);
   scene.add(brakeGlow);
 
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(24,10), new THREE.ShadowMaterial({opacity:0.32}));
@@ -2257,11 +2262,11 @@ function visualTrain(root, mod){
   scene.add(ground);
 
   // ballast bed + sleepers + rails
-  const ballastMat = new THREE.MeshStandardMaterial({color:0x232a33, metalness:0.05, roughness:0.95});
+  const ballastMat = new THREE.MeshStandardMaterial({color:0x1c222a, metalness:0.05, roughness:0.95});
   const ballast = new THREE.Mesh(new THREE.BoxGeometry(9.2,0.12,1.3), ballastMat);
   ballast.position.y = -0.36; ballast.receiveShadow = true;
   scene.add(ballast);
-  const tieMat = new THREE.MeshStandardMaterial({color:0x3a4048, metalness:0.05, roughness:0.85});
+  const tieMat = new THREE.MeshStandardMaterial({color:0x323a44, metalness:0.08, roughness:0.8});
   const tieGeo = new THREE.BoxGeometry(0.16,0.08,1.1);
   for(let i=0;i<20;i++){
     const t = new THREE.Mesh(tieGeo, tieMat);
@@ -2269,33 +2274,78 @@ function visualTrain(root, mod){
     t.castShadow = true; t.receiveShadow = true;
     scene.add(t);
   }
-  const railMat = new THREE.MeshStandardMaterial({color:0x6a7a88, metalness:0.85, roughness:0.3});
+  const railMat = new THREE.MeshStandardMaterial({color:0x8fa2b3, metalness:0.92, roughness:0.2});
   const railGeo = new THREE.BoxGeometry(9.2,0.08,0.07);
   [0.42,-0.42].forEach(z=>{
     const r = new THREE.Mesh(railGeo, railMat);
     r.position.set(0,-0.22,z); r.castShadow = true; r.receiveShadow = true;
     scene.add(r);
   });
+  // the short rail segment where the brake unit acts — subtly highlighted
+  // so it reads as "this is where the eddy currents actually form", and it
+  // lights up (cyan induced-field / gold hot-spot) only while braking
+  const railGlowMat = new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0});
+  const railGlow = new THREE.Mesh(new THREE.BoxGeometry(0.62,0.022,0.1), railGlowMat);
+  railGlow.position.set(0.62, -0.175, 0.42);
+  scene.add(railGlow);
 
-  // train body
+  // ---- train body: a streamlined modern railcar, not a plain box ----
   const trainGroup = new THREE.Group(); scene.add(trainGroup);
-  const bodyMat = new THREE.MeshStandardMaterial({color:0x3b4a5a, metalness:0.4, roughness:0.45});
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2.0,0.62,0.92), bodyMat);
+  const bodyMat = new THREE.MeshStandardMaterial({color:0x46596e, metalness:0.45, roughness:0.38});
+  const CHASSIS_LEN = 2.0, BODY_H = 0.62, BODY_W = 0.92;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(CHASSIS_LEN, BODY_H, BODY_W), bodyMat);
   body.position.y = 0.36; body.castShadow = true; body.receiveShadow = true;
   trainGroup.add(body);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.96,0.1,0.9), bodyMat);
-  roof.position.y = 0.7; roof.castShadow = true;
-  trainGroup.add(roof);
-  const trimMat = new THREE.MeshStandardMaterial({color:0x61D8FF, metalness:0.3, roughness:0.4, emissive:0x1f5570, emissiveIntensity:0.5});
-  const trim = new THREE.Mesh(new THREE.BoxGeometry(2.02,0.05,0.94), trimMat);
-  trim.position.y = 0.14;
-  trainGroup.add(trim);
-  const winMat = new THREE.MeshStandardMaterial({color:0x0e1826, metalness:0.2, roughness:0.25});
-  for(let i=0;i<3;i++){
-    const w = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.26,0.94), winMat);
-    w.position.set(-0.66 + i*0.66, 0.42, 0);
-    trainGroup.add(w);
+
+  // tapered nose cone (bezier profile, extruded across the car's width) at
+  // the leading edge — the "modern streamlined" silhouette the brief asks for
+  function makeNoseGeometry(len, halfH, width){
+    const shape = new THREE.Shape();
+    shape.moveTo(0, -halfH);
+    shape.bezierCurveTo(len*0.55, -halfH, len*0.93, -halfH*0.22, len, halfH*0.05);
+    shape.bezierCurveTo(len*0.93, halfH*0.55, len*0.55, halfH*0.93, 0, halfH);
+    shape.lineTo(0, -halfH);
+    const geo = new THREE.ExtrudeGeometry(shape, {depth:width, bevelEnabled:false, curveSegments:18});
+    geo.translate(0, 0, -width/2);
+    geo.computeVertexNormals();
+    return geo;
   }
+  const nose = new THREE.Mesh(makeNoseGeometry(0.58, BODY_H/2, BODY_W), bodyMat);
+  nose.position.set(CHASSIS_LEN/2, 0.36, 0);
+  nose.castShadow = true; nose.receiveShadow = true;
+  trainGroup.add(nose);
+
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.82,0.08,0.86), bodyMat);
+  roof.position.set(-0.1, 0.685, 0); roof.castShadow = true;
+  trainGroup.add(roof);
+
+  // single ribbon window (modern high-speed-rail look) with two thin
+  // mullion accents, instead of three separate boxy windows — each surface
+  // detail is slightly WIDER (in Z) than the body box so it actually pokes
+  // through the body's flat side faces instead of being hidden inside them
+  const SURF_Z = BODY_W + 0.03;
+  const winMat = new THREE.MeshStandardMaterial({color:0x0b1420, metalness:0.35, roughness:0.15});
+  const ribbon = new THREE.Mesh(new THREE.BoxGeometry(1.5,0.22,SURF_Z), winMat);
+  ribbon.position.set(-0.15, 0.44, 0);
+  trainGroup.add(ribbon);
+  const mullionMat = new THREE.MeshStandardMaterial({color:0x61D8FF, metalness:0.3, roughness:0.4, emissive:0x1f5570, emissiveIntensity:0.4});
+  [-0.55, 0.25].forEach(x=>{
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.02,0.23,SURF_Z+0.01), mullionMat);
+    m.position.set(x, 0.44, 0);
+    trainGroup.add(m);
+  });
+
+  // lower skirt (partially fairs in the wheel gap, another modern-railcar cue)
+  const skirtMat = new THREE.MeshStandardMaterial({color:0x28323d, metalness:0.4, roughness:0.5});
+  const skirt = new THREE.Mesh(new THREE.BoxGeometry(1.9,0.1,SURF_Z), skirtMat);
+  skirt.position.set(-0.08, 0.07, 0);
+  trainGroup.add(skirt);
+
+  // trim stripe along the belt line
+  const trimMat = new THREE.MeshStandardMaterial({color:0x61D8FF, metalness:0.3, roughness:0.35, emissive:0x1f5570, emissiveIntensity:0.5});
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(1.9,0.045,SURF_Z), trimMat);
+  trim.position.set(-0.05, 0.14, 0);
+  trainGroup.add(trim);
 
   const wheelMat = new THREE.MeshStandardMaterial({color:0x1a2028, metalness:0.65, roughness:0.4});
   const hubMat = new THREE.MeshStandardMaterial({color:0x5a6a78, metalness:0.75, roughness:0.3});
@@ -2316,29 +2366,72 @@ function visualTrain(root, mod){
   const wheel1 = makeWheel(-0.62, 0.42);
   const wheel2 = makeWheel(0.62, 0.42);
 
-  // brake coil near wheel2 (stacked rings = winding turns, as in the
-  // source photo's visibly-coiled wheel/rail assembly), only lit when active
-  const coilGroup = new THREE.Group();
-  coilGroup.position.set(0.62, -0.08, 0.72);
-  trainGroup.add(coilGroup);
-  const coilMat = new THREE.MeshStandardMaterial({color:0xd88a54, metalness:0.55, roughness:0.35, emissive:0xd88a54, emissiveIntensity:0});
-  for(let i=0;i<6;i++){
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.24,0.018,8,22), coilMat);
-    ring.position.z = -i*0.045;
-    coilGroup.add(ring);
+  // ---- electromagnetic brake unit: an engineered housing + core + coil,
+  // mounted on a bracket near the rail — not a bare set of floating rings ----
+  const brakeGroup = new THREE.Group();
+  brakeGroup.position.set(0.62, -0.08, 0.62);
+  trainGroup.add(brakeGroup);
+  const housingMat = new THREE.MeshStandardMaterial({color:0x40505f, metalness:0.72, roughness:0.3});
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.22,0.26), housingMat);
+  housing.castShadow = true; housing.receiveShadow = true;
+  brakeGroup.add(housing);
+  const bracketMat = new THREE.MeshStandardMaterial({color:0x293138, metalness:0.6, roughness:0.42});
+  const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.2,0.05), bracketMat);
+  bracket.position.set(0, 0.19, -0.06);
+  brakeGroup.add(bracket);
+  // core + coil sit in the housing's rail-facing window
+  const coilMat = new THREE.MeshStandardMaterial({color:0xc3ccd6, metalness:0.7, roughness:0.3, emissive:0x61D8FF, emissiveIntensity:0});
+  for(let i=0;i<4;i++){
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.095,0.013,8,20), coilMat);
+    ring.position.z = 0.14 - i*0.03;
+    brakeGroup.add(ring);
   }
+  const poleMat = new THREE.MeshStandardMaterial({color:0xe6ecf1, metalness:0.55, roughness:0.22, emissive:0xffb36b, emissiveIntensity:0});
+  const poleTip = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,0.05,16), poleMat);
+  poleTip.rotation.x = Math.PI/2;
+  poleTip.position.z = 0.24;
+  brakeGroup.add(poleTip);
 
-  // eddy-current indicator induced in the rail beneath the coil
+  // soft cyan halo (the induced-field glow) pulsing from the pole face
+  function makeGlowSprite(rgb){
+    const cnv = document.createElement('canvas'); cnv.width = 128; cnv.height = 128;
+    const ctx = cnv.getContext('2d');
+    const g = ctx.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0, `rgba(${rgb},0.85)`);
+    g.addColorStop(0.5, `rgba(${rgb},0.28)`);
+    g.addColorStop(1, `rgba(${rgb},0)`);
+    ctx.fillStyle = g; ctx.fillRect(0,0,128,128);
+    const tex = new THREE.CanvasTexture(cnv);
+    const mat = new THREE.SpriteMaterial({map:tex, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, opacity:0});
+    return new THREE.Sprite(mat);
+  }
+  const halo = makeGlowSprite('97,216,255');
+  halo.scale.set(0.5,0.5,1);
+  halo.position.set(0,0,0.26);
+  brakeGroup.add(halo);
+
+  // energy shaft projecting the field down onto the rail
+  const fieldShaftMat = new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0});
+  const fieldShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.05,0.13,12,1,true), fieldShaftMat);
+  fieldShaft.position.set(0.62,-0.165,0.42);
+  trainGroup.add(fieldShaft);
+
+  // eddy-current rings induced in the rail beneath the unit — cyan loops
+  // (same electromagnetic family as the field glow) with a small gold
+  // "point of effect" core, per the limited warm-accent palette
   const eddyGroup = new THREE.Group(); trainGroup.add(eddyGroup);
-  eddyGroup.position.set(0.62, -0.2, 0.42);
+  eddyGroup.position.set(0.62, -0.19, 0.42);
   eddyGroup.rotation.x = Math.PI/2;
-  const eddyMat = new THREE.MeshBasicMaterial({color:0x7CF2C4, transparent:true, opacity:0});
-  const eddyTorus = new THREE.Mesh(new THREE.TorusGeometry(0.3,0.016,8,24), eddyMat);
+  const eddyMat = new THREE.MeshBasicMaterial({color:0x8fe3ff, transparent:true, opacity:0});
+  const eddyTorus = new THREE.Mesh(new THREE.TorusGeometry(0.27,0.014,8,24), eddyMat);
   eddyGroup.add(eddyTorus);
-  const eddyDot = new THREE.Mesh(new THREE.SphereGeometry(0.035,8,8), new THREE.MeshBasicMaterial({color:0x7CF2C4, transparent:true, opacity:0}));
+  const eddyDot = new THREE.Mesh(new THREE.SphereGeometry(0.032,8,8), new THREE.MeshBasicMaterial({color:0xffb36b, transparent:true, opacity:0}));
   eddyGroup.add(eddyDot);
 
-  const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0.05,0.42), 0.6, 0xFF7A6E, 0.16, 0.09);
+  // light "before" motion cue that fades as the train slows
+  const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(-0.9,0.06,0), 0.45, 0x61D8FF, 0.12, 0.07);
+  trainGroup.add(velArrow);
+  const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0.62,0.05,0.42), 0.5, 0xFF7A6E, 0.15, 0.085);
   forceArrow.visible = false;
   trainGroup.add(forceArrow);
 
@@ -2353,8 +2446,8 @@ function visualTrain(root, mod){
   const ro = new ResizeObserver(resize);
   ro.observe(wrap);
 
-  const TRACK_MIN = -2.5, TRACK_MAX = 2.5;
-  let trainX = TRACK_MIN, speed = 0.72, braking = false, wheelRot = 0, eddyAngle = 0;
+  const TRACK_MIN = -1.5, TRACK_MAX = 1.3;
+  let trainX = TRACK_MIN, speed = 0.72, braking = false, wheelRot = 0, eddyAngle = 0, pulseT = 0;
   function frame(dt){
     if(braking) speed *= Math.pow(SIM.trainDecel, dt*60);
     trainX += speed*dt*60*0.012;
@@ -2367,15 +2460,25 @@ function visualTrain(root, mod){
     wheel2.children.forEach(wg=> wg.rotation.z = wheelRot);
 
     const activeStrength = braking ? clamp(speed/0.72, 0.1, 1) : 0;
-    coilMat.emissiveIntensity = braking ? (0.35 + 0.5*activeStrength) : 0;
-    brakeGlow.intensity = braking ? 1.2*activeStrength : 0;
+    pulseT += dt*3.2;
+    const pulse = 0.75 + 0.25*Math.sin(pulseT);
+
+    coilMat.emissiveIntensity = braking ? (0.3 + 0.5*activeStrength*pulse) : 0;
+    poleMat.emissiveIntensity = braking ? (0.4 + 0.6*activeStrength*pulse) : 0;
+    brakeGlow.intensity = braking ? 1.1*activeStrength*pulse : 0;
+    halo.material.opacity = braking ? (0.5 + 0.4*activeStrength*pulse) : 0;
+    halo.scale.setScalar(0.5 + 0.12*pulse*activeStrength);
+    fieldShaftMat.opacity = braking ? 0.25 + 0.25*activeStrength*pulse : 0;
+    railGlowMat.opacity = braking ? 0.3 + 0.35*activeStrength*pulse : 0;
+    railGlowMat.color.set(activeStrength>0.5 ? 0x61D8FF : 0xffb36b);
 
     const currentsOn = braking && state.showCurrents && activeStrength>0.02;
-    eddyTorus.material.opacity = currentsOn ? 0.35+0.35*activeStrength : 0;
+    eddyTorus.material.opacity = currentsOn ? 0.4+0.35*activeStrength : 0;
     eddyDot.material.opacity = eddyTorus.material.opacity;
     eddyAngle += 4*activeStrength*dt*10;
-    eddyDot.position.set(Math.cos(eddyAngle)*0.3, Math.sin(eddyAngle)*0.3, 0);
+    eddyDot.position.set(Math.cos(eddyAngle)*0.27, Math.sin(eddyAngle)*0.27, 0);
 
+    velArrow.visible = state.showLabels && !braking && speed>0.05;
     forceArrow.visible = braking && state.showForces && activeStrength>0.02;
 
     renderer.render(scene, camera);
