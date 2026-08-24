@@ -415,7 +415,7 @@ body.question-mode .qa-hint{display:flex;}
   transition:all var(--motion-fast) var(--ease-ui);
 }
 .btn-secondary-lg:hover{border-color:var(--border-active);background:var(--surface-2);}
-.home-fs-hint{position:absolute;bottom:22px;font-size:12px;color:var(--text-muted);display:flex;gap:18px;}
+.home-fs-hint{position:relative;margin-top:clamp(10px,2.4vh,22px);font-size:12px;color:var(--text-muted);display:flex;gap:18px;flex-wrap:wrap;justify-content:center;}
 .home-fs-hint span{display:flex;align-items:center;gap:6px;}
 .home-fs-hint kbd{background:var(--surface-1);border:1px solid var(--border-soft);padding:2px 7px;border-radius:6px;font-size:11px;}
 
@@ -1793,50 +1793,180 @@ function buildRingRig(root){
   return { syncToggles(){ setGroupVisible(fieldG,state.showField); setGroupVisible(eddyG,state.showCurrents);}, reset(){x=60;dir=1;}, replay(){x=60;dir=1;} };
 }
 
-/* ---- M7: Twin pendulum experiment ---- */
+/* ---- M7: Twin pendulum experiment ----
+   Realistic 3D (WebGL), same production as visualPlateWebGL (M5): each
+   plate hangs from its own pivot and swings so its lowest point passes
+   BETWEEN two magnet poles set apart along the depth (Z) axis — not past
+   a single pole set to the side, which the flat 2D version drew — matching
+   the source-booklet diagram (plate swings through the field-line gap). */
 function visualPendulum(root, mod){ return buildPendulumScene(root); }
 function buildPendulumScene(root, opts={}){
   root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;';
-  const wrap = el('div', null, root); wrap.style.cssText='width:min(50vw,600px);position:relative;';
-  const svg = svgEl('svg',{viewBox:'0 0 560 380', style:'width:100%;height:auto;'}, wrap);
+  const wrap = el('div', null, root);
+  wrap.style.cssText='width:min(62vw,780px);aspect-ratio:16/10;position:relative;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.5);';
+  const canvas = el('canvas', null, wrap);
+  canvas.style.cssText='display:block;width:100%;height:100%;';
 
-  svgEl('rect',{x:120,y:10,width:320,height:10,rx:4,fill:'#39505f'}, svg);
-  svgEl('circle',{cx:200,cy:20,r:5,fill:'#39505f'}, svg);
-  svgEl('circle',{cx:360,cy:20,r:5,fill:'#39505f'}, svg);
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
 
-  // magnet in the middle, poles facing each other around the lowest point
-  svgEl('rect',{x:230,y:150,width:26,height:80,rx:5,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
-  svgEl('text',{x:243,y:145,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':11}, svg).textContent='N';
-  svgEl('rect',{x:304,y:150,width:26,height:80,rx:5,fill:'#2b3f52',stroke:'#4a6a86'}, svg);
-  svgEl('text',{x:317,y:145,'text-anchor':'middle',fill:'var(--text-secondary)','font-size':11}, svg).textContent='S';
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x081321, 11, 22);
 
-  function makePendulum(pivotX, plateType, color){
-    const g = svgEl('g',{}, svg);
-    const rod = svgEl('line',{x1:pivotX,y1:20,x2:pivotX,y2:170,stroke:'#5a7385','stroke-width':2}, g);
-    const plateG = svgEl('g',{transform:`translate(${pivotX},0)`}, g);
+  const camera = new THREE.PerspectiveCamera(30, 16/10, 0.1, 100);
+  // raised and offset to one side so the Z-gap between each pair of poles
+  // reads clearly as a gap the plate swings through, not a flat side view
+  camera.position.set(2.9, 1.5, 6.6);
+  camera.lookAt(0, 0.15, 0);
+
+  scene.add(new THREE.HemisphereLight(0x6fa8dc, 0x0a1420, 0.85));
+  const keyLight = new THREE.DirectionalLight(0x9fd8ff, 2.3);
+  keyLight.position.set(-3, 4.5, 5);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(1024, 1024);
+  keyLight.shadow.camera.near = 1; keyLight.shadow.camera.far = 20;
+  keyLight.shadow.camera.left = -5; keyLight.shadow.camera.right = 5;
+  keyLight.shadow.camera.top = 5; keyLight.shadow.camera.bottom = -5;
+  scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.65);
+  fillLight.position.set(3, 1.5, 2);
+  scene.add(fillLight);
+  const warmFill = new THREE.PointLight(0xffb36b, 3, 9);
+  warmFill.position.set(0.5, 0.2, 3);
+  scene.add(warmFill);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.ShadowMaterial({opacity:0.3}));
+  ground.rotation.x = -Math.PI/2; ground.position.y = -1.7; ground.receiveShadow = true;
+  scene.add(ground);
+
+  // shared materials
+  const poleMat = new THREE.MeshStandardMaterial({color:0x2b3f52, metalness:0.75, roughness:0.32});
+  const poleFaceMat = new THREE.MeshStandardMaterial({color:0x3a6fa8, metalness:0.4, roughness:0.5, emissive:0x3a6fa8, emissiveIntensity:0.15});
+  const rodMat = new THREE.MeshStandardMaterial({color:0x5a7385, metalness:0.6, roughness:0.4});
+  const solidPlateMat = new THREE.MeshStandardMaterial({color:0xd88a54, metalness:0.5, roughness:0.38});
+  const slottedStripMat = new THREE.MeshStandardMaterial({color:0x3f8f6c, metalness:0.35, roughness:0.5});
+  const eddyMat = new THREE.MeshBasicMaterial({color:0x7CF2C4, transparent:true, opacity:0.55});
+  const eddyDotMat = new THREE.MeshBasicMaterial({color:0x7CF2C4});
+
+  // support bar spanning both pendulums
+  const barGroup = new THREE.Group(); scene.add(barGroup);
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,4.6,12), poleMat);
+  bar.rotation.z = Math.PI/2; bar.position.y = 1.95; bar.castShadow = true;
+  barGroup.add(bar);
+
+  const ARM_LEN = 1.9, PIVOT_Y = 1.95;
+  const eddyGeo = new THREE.TorusGeometry(0.26, 0.017, 8, 26);
+  const eddyDotGeo = new THREE.SphereGeometry(0.045, 8, 8);
+  const fieldDotGeo = new THREE.SphereGeometry(0.03, 8, 8);
+  const fieldDotMat = new THREE.MeshBasicMaterial({color:0x61D8FF});
+
+  function makeRig(xOffset, plateType, poleZ){
+    const pivotPost = new THREE.Mesh(new THREE.SphereGeometry(0.06,10,10), poleMat);
+    pivotPost.position.set(xOffset, PIVOT_Y, 0);
+    barGroup.add(pivotPost);
+
+    const rodGroup = new THREE.Group();
+    rodGroup.position.set(xOffset, PIVOT_Y, 0);
+    scene.add(rodGroup);
+
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,ARM_LEN,10), rodMat);
+    rod.position.y = -ARM_LEN/2; rod.castShadow = true;
+    rodGroup.add(rod);
+
+    const plateGroup = new THREE.Group();
+    plateGroup.position.y = -ARM_LEN;
+    rodGroup.add(plateGroup);
+
     if(plateType==='solid'){
-      svgEl('rect',{x:-20,y:170,width:40,height:60,rx:6,fill:'#8a5a34',stroke:'#c9895a','stroke-width':2}, plateG);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.82,0.9,0.16), solidPlateMat);
+      m.castShadow = true; m.receiveShadow = true;
+      plateGroup.add(m);
     } else {
-      for(let i=0;i<5;i++){
-        svgEl('rect',{x:-20+i*8,y:170,width:6,height:60,rx:2,fill:'#2a5a48',stroke:'#5aa080','stroke-width':1}, plateG);
+      const n=5, stripW=0.11, gap=0.045;
+      const totalW = n*stripW + (n-1)*gap;
+      for(let i=0;i<n;i++){
+        const m = new THREE.Mesh(new THREE.BoxGeometry(stripW,0.9,0.16), slottedStripMat);
+        m.position.x = -totalW/2 + stripW/2 + i*(stripW+gap);
+        m.castShadow = true; m.receiveShadow = true;
+        plateGroup.add(m);
       }
     }
-    const ghost = svgEl('g',{opacity:0,transform:`translate(${pivotX},0)`}, g);
-    const ghostShape = plateType==='solid'
-      ? svgEl('rect',{x:-20,y:170,width:40,height:60,rx:6,fill:'#8a5a34'}, ghost)
-      : svgEl('rect',{x:-20,y:170,width:40,height:60,rx:6,fill:'#2a5a48'}, ghost);
-    return {g, rod, plateG, ghost, pivotX};
+
+    // eddy-current indicator on the plate face (lies in the XY plane, same
+    // as the plate's broad face — no extra rotation needed)
+    const eddyTorus = new THREE.Mesh(eddyGeo, eddyMat.clone());
+    const eddyDot = new THREE.Mesh(eddyDotGeo, eddyDotMat);
+    plateGroup.add(eddyTorus, eddyDot);
+
+    // magnet poles set apart in Z, straddling the plate's fixed depth —
+    // the plate swings THROUGH this gap at the bottom of its arc (the
+    // pendulum's vertical rest point, where the field zone is centered)
+    const poleY = PIVOT_Y - ARM_LEN;
+    function makePole(z, label){
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.05,1.25,0.34), poleMat);
+      body.castShadow = true; body.receiveShadow = true;
+      g.add(body);
+      const face = new THREE.Mesh(new THREE.BoxGeometry(1.07,1.27,0.03), poleFaceMat);
+      face.position.z = z>0 ? -0.19 : 0.19;
+      g.add(face);
+      const lbl = makeLabelSprite(label, '#ffffff');
+      lbl.position.set(0.62, 0, 0);
+      lbl.scale.set(0.5,0.28,1);
+      g.add(lbl);
+      g.position.set(xOffset, poleY, z);
+      return g;
+    }
+    scene.add(makePole(poleZ, 'N'));
+    scene.add(makePole(-poleZ, 'S'));
+
+    // soft field glow filling the gap between the poles
+    const fieldGlow = new THREE.Mesh(new THREE.PlaneGeometry(0.95,1.15), new THREE.MeshBasicMaterial({color:0x61D8FF, transparent:true, opacity:0.1, side:THREE.DoubleSide}));
+    fieldGlow.position.set(xOffset, poleY, 0);
+    scene.add(fieldGlow);
+    const fieldDots = [];
+    for(let i=0;i<2;i++){
+      const d = new THREE.Mesh(fieldDotGeo, fieldDotMat);
+      d.position.set(xOffset + (i-0.5)*0.4, poleY, poleZ*0.6);
+      scene.add(d);
+      fieldDots.push({mesh:d, z:poleZ*0.6, t:i/2, poleZ});
+    }
+
+    // trace line
+    const traceMat = new THREE.LineBasicMaterial({color: plateType==='solid'?0xffb36b:0x7cf2c4, transparent:true, opacity:0});
+    const traceGeo = new THREE.BufferGeometry();
+    const traceLine = new THREE.Line(traceGeo, traceMat);
+    scene.add(traceLine);
+
+    return {rodGroup, eddyTorus, eddyDot, fieldGlow, fieldDots, traceLine, traceMat, tracePts:[], eddyAngle:Math.random()*Math.PI*2, isSolid: plateType==='solid'};
   }
-  const pA = makePendulum(200,'solid');
-  const pB = makePendulum(360,'slotted');
+  const pA = makeRig(-1.55, 'solid', 0.42);
+  const pB = makeRig(1.55, 'slotted', 0.42);
 
-  const traceLayer = svgEl('g',{opacity:.5}, svg);
-  let traceA=[], traceB=[];
-  const traceA_path = svgEl('path',{fill:'none',stroke:'#ffb36b','stroke-width':1.4,opacity:0}, traceLayer);
-  const traceB_path = svgEl('path',{fill:'none',stroke:'#7cf2c4','stroke-width':1.4,opacity:0}, traceLayer);
+  function resize(){
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    if(!w||!h) return;
+    renderer.setSize(w,h,false);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  const ro = new ResizeObserver(resize);
+  ro.observe(wrap);
 
-  const state_p = { angA:0.55, angB:0.55, vA:0, vB:0, running:false, t:0, ghostA:0.55, ghostB:0.55, traceOn:false, stepMode:false };
-  const L = SIM.pendulumLength, g0 = SIM.pendulumGravity;
+  const state_p = { angA:0.55, angB:0.55, vA:0, vB:0, running:false, t:0, traceOn:false, stepMode:false };
+  // SIM.pendulumGravity is tuned assuming a much longer on-screen timescale
+  // than a live classroom demo needs (its raw value gives a ~75s period) —
+  // TIME_BOOST rescales the integration rate only, so the same qualitative
+  // physics (Lenz's-law damping shape, relative solid-vs-slotted decay)
+  // plays out over a few seconds instead of most of a minute.
+  const TIME_BOOST = 140;
+  const g0 = SIM.pendulumGravity;
 
   function fieldDamping(ang, isSolid){
     // stronger damping near the bottom (inside the field zone)
@@ -1855,24 +1985,56 @@ function buildPendulumScene(root, opts={}){
     state_p.angB += state_p.vB*dt;
   }
 
-  function render(){
-    const ax = pA.pivotX + Math.sin(state_p.angA)*L*0.62, ay = 20 + Math.cos(state_p.angA)*L*0.62;
-    const bx = pB.pivotX + Math.sin(state_p.angB)*L*0.62, by = 20 + Math.cos(state_p.angB)*L*0.62;
-    pA.g.setAttribute('transform', `rotate(${state_p.angA*57.3} ${pA.pivotX} 20)`);
-    pB.g.setAttribute('transform', `rotate(${state_p.angB*57.3} ${pB.pivotX} 20)`);
-    if(state_p.traceOn){
-      traceA.push(`${ax.toFixed(1)},${ay.toFixed(1)}`); traceB.push(`${bx.toFixed(1)},${by.toFixed(1)}`);
-      if(traceA.length>240) traceA.shift(); if(traceB.length>240) traceB.shift();
-      traceA_path.setAttribute('d','M'+traceA.join(' L')); traceA_path.style.opacity=.6;
-      traceB_path.setAttribute('d','M'+traceB.join(' L')); traceB_path.style.opacity=.6;
+  function updateTrace(rig, ang){
+    if(!state_p.traceOn){ rig.traceMat.opacity = 0; return; }
+    rig.rodGroup.updateMatrixWorld(true);
+    const worldPos = new THREE.Vector3();
+    rig.eddyTorus.getWorldPosition(worldPos);
+    rig.tracePts.push(worldPos.clone());
+    if(rig.tracePts.length>200) rig.tracePts.shift();
+    rig.traceLine.geometry.setFromPoints(rig.tracePts);
+    rig.traceMat.opacity = 0.6;
+  }
+
+  function renderRig(rig, ang, vel, isSolid){
+    rig.rodGroup.rotation.z = -ang;
+    const proximity = 1 - Math.min(Math.abs(ang)/0.15, 1);
+    const speedMag = Math.abs(vel);
+    const strength = clamp(proximity * (0.3 + speedMag*8), 0, 1);
+    const currentsOn = state.showCurrents && strength>0.02;
+    rig.eddyTorus.visible = currentsOn;
+    rig.eddyDot.visible = currentsOn;
+    // slotted (laminated) plate: currents are broken into small loops —
+    // represented here as a visibly smaller, dimmer indicator, not the
+    // same strong single loop the solid plate gets
+    const scaleF = isSolid ? 1 : 0.55;
+    rig.eddyTorus.scale.setScalar(scaleF);
+    rig.eddyTorus.material.opacity = (isSolid? 0.35:0.2) + 0.35*strength;
+    rig.eddyAngle += (isSolid? 3.4:1.6) * strength * 0.016 * 60;
+    const r = 0.26*scaleF;
+    rig.eddyDot.position.set(Math.cos(rig.eddyAngle)*r, Math.sin(rig.eddyAngle)*r, 0.1);
+    rig.fieldGlow.visible = state.showField;
+    rig.fieldGlow.material.opacity = 0.06 + 0.1*proximity;
+    for(const fd of rig.fieldDots){
+      fd.mesh.visible = state.showField;
+      fd.t = (fd.t + 0.006) % 1;
+      fd.mesh.position.z = fd.poleZ - fd.t*fd.poleZ*2;
     }
+    updateTrace(rig, ang);
+  }
+
+  function render(){
+    renderRig(pA, state_p.angA, state_p.vA, true);
+    renderRig(pB, state_p.angB, state_p.vB, false);
+    renderer.render(scene, camera);
   }
   render();
 
   function frame(dt){
-    if(!state_p.running || state_p.stepMode) return;
-    const sub = 4;
-    for(let i=0;i<sub;i++) stepPhysics((dt/sub)*3.2);
+    if(state_p.running && !state_p.stepMode){
+      const sub = 4;
+      for(let i=0;i<sub;i++) stepPhysics((dt/sub)*3.2*TIME_BOOST);
+    }
     render();
   }
   animEngine.ticks.push(guardTick(root, frame));
@@ -1906,15 +2068,16 @@ function buildPendulumScene(root, opts={}){
     });
   });
 
+  function clearTraces(){ pA.tracePts=[]; pB.tracePts=[]; pA.traceMat.opacity=0; pB.traceMat.opacity=0; }
   playBtn.addEventListener('click', ()=>{
     state_p.running = true; state_p.stepMode=false;
     state_p.angA = 0.55; state_p.angB = 0.55; state_p.vA=0; state_p.vB=0;
-    traceA=[]; traceB=[];
+    clearTraces();
   });
   pauseBtn.addEventListener('click', ()=>{ state_p.running = !state_p.running; pauseBtn.querySelector('span').textContent = state_p.running?'إيقاف مؤقت':'استئناف'; });
   stepBtn.addEventListener('click', ()=>{ state_p.running=true; stepPhysics(0.9); stepPhysics(0.9); render(); state_p.running=false; });
-  resetBtn.addEventListener('click', ()=>{ state_p.running=false; state_p.angA=0.55; state_p.angB=0.55; state_p.vA=0; state_p.vB=0; traceA=[];traceB=[]; traceA_path.style.opacity=0; traceB_path.style.opacity=0; render(); });
-  traceBtn.addEventListener('click', ()=>{ state_p.traceOn = !state_p.traceOn; traceBtn.classList.toggle('active-tool', state_p.traceOn); traceBtn.style.borderColor = state_p.traceOn? 'var(--border-active)':'var(--border-soft)'; if(!state_p.traceOn){traceA_path.style.opacity=0; traceB_path.style.opacity=0;} });
+  resetBtn.addEventListener('click', ()=>{ state_p.running=false; state_p.angA=0.55; state_p.angB=0.55; state_p.vA=0; state_p.vB=0; clearTraces(); render(); });
+  traceBtn.addEventListener('click', ()=>{ state_p.traceOn = !state_p.traceOn; traceBtn.classList.toggle('active-tool', state_p.traceOn); traceBtn.style.borderColor = state_p.traceOn? 'var(--border-active)':'var(--border-soft)'; if(!state_p.traceOn) clearTraces(); });
 
   // graph overlay (qualitative amplitude decay)
   const graphOverlay = el('div', null, root);
@@ -2046,56 +2209,176 @@ function detectorIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" 
 function signalIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#FFB36B" stroke-width="1.8"><rect x="8" y="2" width="8" height="16" rx="3"/><circle cx="12" cy="6" r="1" fill="#FFB36B"/><circle cx="12" cy="10" r="1" fill="#FFB36B"/><circle cx="12" cy="14" r="1" fill="#FFB36B"/><line x1="12" y1="18" x2="12" y2="22"/></svg>`;}
 function mapIcon(){return `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#61D8FF" stroke-width="1.8"><circle cx="12" cy="12" r="2.4"/><path d="M12 3v4.5M12 16.5V21M3 12h4.5M16.5 12H21"/></svg>`;}
 
-/* ---- M10/M11: Train braking bay ---- */
+/* ---- M10/M11: Train braking bay ----
+   Realistic 3D (WebGL), same production as M5/M7: eddy-current rail brakes —
+   an electromagnet coil near the wheel energizes the rail, inducing eddy
+   currents in it that oppose the train's motion (no contact with the
+   wheel itself, matching the source photo's coil-wound brake assembly). */
 function visualTrain(root, mod){
-  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
-  const wrap = el('div', null, root); wrap.style.cssText='width:min(56vw,700px);position:relative;';
-  const svg = svgEl('svg',{viewBox:'0 0 640 260', style:'width:100%;height:auto;'}, wrap);
+  root.style.cssText='position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  const wrap = el('div', null, root);
+  wrap.style.cssText='width:min(64vw,820px);aspect-ratio:20/9;position:relative;border-radius:18px;overflow:hidden;box-shadow:0 30px 60px rgba(0,0,0,.5);';
+  const canvas = el('canvas', null, wrap);
+  canvas.style.cssText='display:block;width:100%;height:100%;';
 
-  svgEl('rect',{x:0,y:200,width:640,height:8,fill:'#2a3038'}, svg);
-  for(let i=0;i<16;i++) svgEl('rect',{x:i*42,y:196,width:22,height:16,fill:'#3a4048'}, svg);
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, powerPreference:'low-power'});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.1;
 
-  const trainG = svgEl('g',{}, svg);
-  svgEl('rect',{x:0,y:120,width:220,height:70,rx:14,fill:'#3b4a5a',stroke:'#61D8FF','stroke-width':1.4}, trainG);
-  svgEl('rect',{x:10,y:132,width:50,height:26,rx:4,fill:'#0e1826'}, trainG);
-  svgEl('rect',{x:70,y:132,width:50,height:26,rx:4,fill:'#0e1826'}, trainG);
-  svgEl('rect',{x:130,y:132,width:50,height:26,rx:4,fill:'#0e1826'}, trainG);
-  function makeWheel(cx,cy){
-    const g = svgEl('g',{}, trainG);
-    svgEl('circle',{cx,cy,r:15,fill:'#1a2028',stroke:'#5a6a78','stroke-width':3}, g);
-    svgEl('line',{x1:cx,y1:cy-11,x2:cx,y2:cy+11,stroke:'#5a6a78','stroke-width':2}, g);
-    svgEl('line',{x1:cx-11,y1:cy,x2:cx+11,y2:cy,stroke:'#5a6a78','stroke-width':2}, g);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x081321, 10, 24);
+
+  const camera = new THREE.PerspectiveCamera(36, 20/9, 0.1, 100);
+  camera.position.set(1.5, 1.5, 7.0);
+  camera.lookAt(0, 0.15, 0);
+
+  scene.add(new THREE.HemisphereLight(0x6fa8dc, 0x0a1420, 0.85));
+  const keyLight = new THREE.DirectionalLight(0x9fd8ff, 2.2);
+  keyLight.position.set(-3, 5, 4);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(1024, 1024);
+  keyLight.shadow.camera.near = 1; keyLight.shadow.camera.far = 24;
+  keyLight.shadow.camera.left = -6; keyLight.shadow.camera.right = 6;
+  keyLight.shadow.camera.top = 4; keyLight.shadow.camera.bottom = -4;
+  scene.add(keyLight);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  fillLight.position.set(3, 1.5, 3);
+  scene.add(fillLight);
+  const brakeGlow = new THREE.PointLight(0xff7a6e, 0, 4);
+  brakeGlow.position.set(0.75, 0.05, 0.4);
+  scene.add(brakeGlow);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(24,10), new THREE.ShadowMaterial({opacity:0.32}));
+  ground.rotation.x = -Math.PI/2; ground.position.y = -0.42; ground.receiveShadow = true;
+  scene.add(ground);
+
+  // ballast bed + sleepers + rails
+  const ballastMat = new THREE.MeshStandardMaterial({color:0x232a33, metalness:0.05, roughness:0.95});
+  const ballast = new THREE.Mesh(new THREE.BoxGeometry(9.2,0.12,1.3), ballastMat);
+  ballast.position.y = -0.36; ballast.receiveShadow = true;
+  scene.add(ballast);
+  const tieMat = new THREE.MeshStandardMaterial({color:0x3a4048, metalness:0.05, roughness:0.85});
+  const tieGeo = new THREE.BoxGeometry(0.16,0.08,1.1);
+  for(let i=0;i<20;i++){
+    const t = new THREE.Mesh(tieGeo, tieMat);
+    t.position.set(-4.4 + i*0.46, -0.29, 0);
+    t.castShadow = true; t.receiveShadow = true;
+    scene.add(t);
+  }
+  const railMat = new THREE.MeshStandardMaterial({color:0x6a7a88, metalness:0.85, roughness:0.3});
+  const railGeo = new THREE.BoxGeometry(9.2,0.08,0.07);
+  [0.42,-0.42].forEach(z=>{
+    const r = new THREE.Mesh(railGeo, railMat);
+    r.position.set(0,-0.22,z); r.castShadow = true; r.receiveShadow = true;
+    scene.add(r);
+  });
+
+  // train body
+  const trainGroup = new THREE.Group(); scene.add(trainGroup);
+  const bodyMat = new THREE.MeshStandardMaterial({color:0x3b4a5a, metalness:0.4, roughness:0.45});
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.0,0.62,0.92), bodyMat);
+  body.position.y = 0.36; body.castShadow = true; body.receiveShadow = true;
+  trainGroup.add(body);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.96,0.1,0.9), bodyMat);
+  roof.position.y = 0.7; roof.castShadow = true;
+  trainGroup.add(roof);
+  const trimMat = new THREE.MeshStandardMaterial({color:0x61D8FF, metalness:0.3, roughness:0.4, emissive:0x1f5570, emissiveIntensity:0.5});
+  const trim = new THREE.Mesh(new THREE.BoxGeometry(2.02,0.05,0.94), trimMat);
+  trim.position.y = 0.14;
+  trainGroup.add(trim);
+  const winMat = new THREE.MeshStandardMaterial({color:0x0e1826, metalness:0.2, roughness:0.25});
+  for(let i=0;i<3;i++){
+    const w = new THREE.Mesh(new THREE.BoxGeometry(0.42,0.26,0.94), winMat);
+    w.position.set(-0.66 + i*0.66, 0.42, 0);
+    trainGroup.add(w);
+  }
+
+  const wheelMat = new THREE.MeshStandardMaterial({color:0x1a2028, metalness:0.65, roughness:0.4});
+  const hubMat = new THREE.MeshStandardMaterial({color:0x5a6a78, metalness:0.75, roughness:0.3});
+  const wheelGeo = new THREE.CylinderGeometry(0.24,0.24,0.09,20); wheelGeo.rotateX(Math.PI/2);
+  const hubGeo = new THREE.CylinderGeometry(0.06,0.06,0.11,10); hubGeo.rotateX(Math.PI/2);
+  function makeWheel(x, z){
+    const g = new THREE.Group();
+    [z, -z].forEach(zz=>{
+      const wm = new THREE.Mesh(wheelGeo, wheelMat); wm.castShadow = true;
+      const hm = new THREE.Mesh(hubGeo, hubMat);
+      const wg = new THREE.Group(); wg.add(wm); wg.add(hm); wg.position.z = zz;
+      g.add(wg);
+    });
+    g.position.set(x, -0.08, 0);
+    trainGroup.add(g);
     return g;
   }
-  const wheel1 = makeWheel(40,198);
-  const wheel2 = makeWheel(180,198);
+  const wheel1 = makeWheel(-0.62, 0.42);
+  const wheel2 = makeWheel(0.62, 0.42);
 
-  // electromagnet coil near wheel2
-  const coilG = svgEl('g',{}, svg);
-  for(let i=0;i<4;i++) svgEl('ellipse',{cx:180+i*6-9,cy:198,rx:6,ry:20,fill:'none',stroke:'#61D8FF','stroke-width':1.4,opacity:.7}, coilG);
-  coilG.style.opacity=0;
+  // brake coil near wheel2 (stacked rings = winding turns, as in the
+  // source photo's visibly-coiled wheel/rail assembly), only lit when active
+  const coilGroup = new THREE.Group();
+  coilGroup.position.set(0.62, -0.08, 0.72);
+  trainGroup.add(coilGroup);
+  const coilMat = new THREE.MeshStandardMaterial({color:0xd88a54, metalness:0.55, roughness:0.35, emissive:0xd88a54, emissiveIntensity:0});
+  for(let i=0;i<6;i++){
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.24,0.018,8,22), coilMat);
+    ring.position.z = -i*0.045;
+    coilGroup.add(ring);
+  }
 
-  const eddyG = svgEl('g',{}, svg);
-  buildEddyLoops(svg, eddyG, {cx:180,cy:198,baseR:26,count:2,dir:1,color:'#7cf2c4'});
-  eddyG.style.opacity=0;
+  // eddy-current indicator induced in the rail beneath the coil
+  const eddyGroup = new THREE.Group(); trainGroup.add(eddyGroup);
+  eddyGroup.position.set(0.62, -0.2, 0.42);
+  eddyGroup.rotation.x = Math.PI/2;
+  const eddyMat = new THREE.MeshBasicMaterial({color:0x7CF2C4, transparent:true, opacity:0});
+  const eddyTorus = new THREE.Mesh(new THREE.TorusGeometry(0.3,0.016,8,24), eddyMat);
+  eddyGroup.add(eddyTorus);
+  const eddyDot = new THREE.Mesh(new THREE.SphereGeometry(0.035,8,8), new THREE.MeshBasicMaterial({color:0x7CF2C4, transparent:true, opacity:0}));
+  eddyGroup.add(eddyDot);
 
-  const fArrow = svgEl('line',{x1:180,y1:198,x2:150,y2:198,stroke:'#FF7A6E','stroke-width':3,opacity:0}, svg);
+  const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0.05,0.42), 0.6, 0xFF7A6E, 0.16, 0.09);
+  forceArrow.visible = false;
+  trainGroup.add(forceArrow);
 
-  let trainX = 0, speed=1.6, braking=false, wheelRot=0;
+  function resize(){
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    if(!w||!h) return;
+    renderer.setSize(w,h,false);
+    camera.aspect = w/h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  const ro = new ResizeObserver(resize);
+  ro.observe(wrap);
+
+  const TRACK_MIN = -2.5, TRACK_MAX = 2.5;
+  let trainX = TRACK_MIN, speed = 0.72, braking = false, wheelRot = 0, eddyAngle = 0;
   function frame(dt){
     if(braking) speed *= Math.pow(SIM.trainDecel, dt*60);
-    trainX += speed*dt*60;
-    if(!braking && trainX>560) trainX = 0;
-    trainX = clamp(trainX, 0, 560);
-    trainG.setAttribute('transform', `translate(${trainX},0)`);
-    wheelRot = (wheelRot + speed*dt*160) % 360;
-    wheel1.setAttribute('transform', `rotate(${wheelRot} 40 198)`);
-    wheel2.setAttribute('transform', `rotate(${wheelRot} 180 198)`);
-    coilG.style.opacity = braking? 1:0;
-    eddyG.style.opacity = (braking && state.showCurrents) ? clamp(speed/1.6,.15,1).toFixed(2) : 0;
-    eddyG.setAttribute('transform', `translate(${trainX},0)`);
-    fArrow.style.opacity = (braking && state.showForces)?1:0;
-    fArrow.setAttribute('x1', 180+trainX); fArrow.setAttribute('x2', 180+trainX-30*clamp(speed,0.2,1));
+    trainX += speed*dt*60*0.012;
+    if(!braking && trainX>TRACK_MAX) trainX = TRACK_MIN;
+    trainX = clamp(trainX, TRACK_MIN, TRACK_MAX);
+    trainGroup.position.x = trainX;
+
+    wheelRot = (wheelRot + speed*dt*4.6) % (Math.PI*2);
+    wheel1.children.forEach(wg=> wg.rotation.z = wheelRot);
+    wheel2.children.forEach(wg=> wg.rotation.z = wheelRot);
+
+    const activeStrength = braking ? clamp(speed/0.72, 0.1, 1) : 0;
+    coilMat.emissiveIntensity = braking ? (0.35 + 0.5*activeStrength) : 0;
+    brakeGlow.intensity = braking ? 1.2*activeStrength : 0;
+
+    const currentsOn = braking && state.showCurrents && activeStrength>0.02;
+    eddyTorus.material.opacity = currentsOn ? 0.35+0.35*activeStrength : 0;
+    eddyDot.material.opacity = eddyTorus.material.opacity;
+    eddyAngle += 4*activeStrength*dt*10;
+    eddyDot.position.set(Math.cos(eddyAngle)*0.3, Math.sin(eddyAngle)*0.3, 0);
+
+    forceArrow.visible = braking && state.showForces && activeStrength>0.02;
+
+    renderer.render(scene, camera);
   }
   animEngine.ticks.push(guardTick(root, frame));
 
@@ -2108,16 +2391,16 @@ function visualTrain(root, mod){
   resetBtn2.style.cssText='min-height:56px;padding:0 22px;font-size:14px;';
   resetBtn2.textContent='إعادة الضبط';
   brakeBtn.addEventListener('click', ()=>{ braking = true; });
-  resetBtn2.addEventListener('click', ()=>{ braking=false; speed=1.6; trainX=0; });
+  resetBtn2.addEventListener('click', ()=>{ braking=false; speed=0.72; trainX=TRACK_MIN; });
 
   const timelineWrap = el('div', null, root);
-  timelineWrap.style.cssText='display:flex;gap:26px;font-size:12.5px;color:var(--text-muted);';
+  timelineWrap.style.cssText='display:flex;gap:26px;font-size:12.5px;color:var(--text-muted);flex-wrap:wrap;justify-content:center;';
   timelineWrap.innerHTML = `<span>قبل: <b style="color:var(--text-secondary)">مكابح متوقفة — لا مجال، لا تيارات دوامة</b></span><span>بعد: <b style="color:var(--accent-2)">مكابح فعّالة — مجال قوي وتيارات دوامة كابحة</b></span>`;
 
   return {
     syncToggles(){},
-    reset(){ braking=false; speed=1.6; trainX=0; },
-    replay(){ braking=false; speed=1.6; trainX=0; },
+    reset(){ braking=false; speed=0.72; trainX=TRACK_MIN; },
+    replay(){ braking=false; speed=0.72; trainX=TRACK_MIN; },
   };
 }
 
@@ -2268,7 +2551,7 @@ SceneManager.register({
     ovBtn.innerHTML = `<span>استعراض المحتوى</span>`;
     ovBtn.addEventListener('click', ()=> SceneManager.go('overview'));
 
-    const hint = el('div','home-fs-hint', container);
+    const hint = el('div','home-fs-hint', core);
     hint.innerHTML = `<span><kbd>F</kbd> ملء الشاشة</span><span><kbd>→</kbd> التالي</span><span><kbd>H</kbd> إخفاء الواجهة</span>`;
   },
   enter(){ document.body.classList.remove('scene-dim'); },
