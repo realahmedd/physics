@@ -305,7 +305,16 @@ body.ui-hidden .footer-bar{transform:translateY(120%);opacity:0;pointer-events:n
    SHARED SCENE COMPONENTS
    ========================================================================= */
 .teaching-scene{display:grid;grid-template-columns:1.15fr .85fr;height:100%;}
-.scene-visual{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;padding:26px;}
+/* overflow:hidden + a max-width/max-height clamp on the direct child: most
+   scene builders size their visual with vw-relative units (width:min(NNvw,
+   NNNpx) + aspect-ratio) against the whole viewport, not against this box's
+   actual available space. That's fine while this box is generously sized,
+   but on a device whose CSS viewport is small (see the ≤1200px stacked
+   layout below), the content can end up taller than the box while sizing
+   itself as if it had plenty of room — without a clamp here it doesn't
+   shrink, it just overflows straight through whatever sits below/beside it. */
+.scene-visual{position:relative;min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;padding:26px;overflow:hidden;}
+.scene-visual>*{max-width:100%;max-height:100%;}
 .scene-visual .stage-caption{position:absolute;bottom:18px;inset-inline-start:26px;font-size:12.5px;color:var(--text-muted);background:var(--surface-1);border:1px solid var(--border-soft);padding:6px 12px;border-radius:100px;}
 .scene-panel{
   position:relative;min-width:0;min-height:0;
@@ -480,8 +489,17 @@ body.laser-active{cursor:none;}
    RESPONSIVE
    ========================================================================= */
 @media (max-width:1200px){
-  .teaching-scene{grid-template-columns:1fr;grid-template-rows:1fr auto;}
-  .scene-panel{border-inline-start:none;border-top:1px solid var(--border-soft);max-height:46%;}
+  /* Row2 was "auto" (sized to the panel's own content) with row1 left as
+     "1fr" (whatever's left over) — on a short viewport the panel's content
+     can end up wanting most of the space, squeezing the visual/experiment
+     row down to a sliver (and percentage max-height on a child inside an
+     "auto" track has no reliable basis to resolve against, so it didn't
+     actually cap anything either). Both rows now get an explicit share of
+     the grid container's own definite height, so the visual keeps a usable
+     floor and the panel is capped with its existing internal scroll
+     (.scene-panel-scroll) handling any overflow. */
+  .teaching-scene{grid-template-columns:1fr;grid-template-rows:minmax(140px,1fr) minmax(0,42%);}
+  .scene-panel{border-inline-start:none;border-top:1px solid var(--border-soft);max-height:42%;}
 }
 @media (max-aspect-ratio: 4/3){
   :root{--rail-w:64px;}
@@ -489,38 +507,6 @@ body.laser-active{cursor:none;}
 </style>
 </head>
 <body>
-
-<!-- TEMP DIAGNOSTIC — for tracking down a layout bug reported only on the
-     classroom touch panel (text/experiment panes overlapping instead of
-     sitting side by side). Shows the real viewport metrics that device's
-     browser reports, since that can't be inspected remotely. Tap the badge
-     to dismiss it. Safe to delete once the cause is found. -->
-<div id="__diag" style="position:fixed;top:8px;left:8px;z-index:99999;background:#000;color:#0f0;font:12px/1.4 monospace;padding:10px 14px;border-radius:8px;max-width:92vw;white-space:pre-wrap;direction:ltr;text-align:left;box-shadow:0 4px 20px rgba(0,0,0,.6);" onclick="this.remove()"></div>
-<script>
-(function(){
-  var d = document.getElementById('__diag');
-  function report(){
-    var lines = [
-      'innerWidth x innerHeight: ' + window.innerWidth + ' x ' + window.innerHeight,
-      'outerWidth x outerHeight: ' + window.outerWidth + ' x ' + window.outerHeight,
-      'screen: ' + screen.width + ' x ' + screen.height,
-      'devicePixelRatio: ' + window.devicePixelRatio,
-      'visualViewport: ' + (window.visualViewport ? (window.visualViewport.width+' x '+window.visualViewport.height+' scale='+window.visualViewport.scale) : 'n/a'),
-      'documentElement.clientWidth x Height: ' + document.documentElement.clientWidth + ' x ' + document.documentElement.clientHeight,
-      'CSS Grid support: ' + (CSS.supports('display','grid')),
-      'CSS gap-in-flex support: ' + (CSS.supports('gap','1px')),
-      'CSS aspect-ratio support: ' + (CSS.supports('aspect-ratio','1/1')),
-      'CSS min() support: ' + (CSS.supports('width','min(1px,2px)')),
-      'CSS dvh support: ' + (CSS.supports('height','1dvh')),
-      'userAgent: ' + navigator.userAgent,
-      '(tap to dismiss)'
-    ];
-    d.textContent = lines.join('\n');
-  }
-  report();
-  window.addEventListener('resize', report);
-})();
-</script>
 
 <div id="cosmic-bg" aria-hidden="true">
   <canvas id="starfield"></canvas>
