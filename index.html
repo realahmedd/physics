@@ -492,14 +492,22 @@ body.laser-active{cursor:none;}
   /* Row2 was "auto" (sized to the panel's own content) with row1 left as
      "1fr" (whatever's left over) — on a short viewport the panel's content
      can end up wanting most of the space, squeezing the visual/experiment
-     row down to a sliver (and percentage max-height on a child inside an
-     "auto" track has no reliable basis to resolve against, so it didn't
-     actually cap anything either). Both rows now get an explicit share of
-     the grid container's own definite height, so the visual keeps a usable
-     floor and the panel is capped with its existing internal scroll
-     (.scene-panel-scroll) handling any overflow. */
+     row down to a sliver. Both rows now get an explicit share of the grid
+     container's own definite height, so the visual keeps a usable floor.
+     The panel must then be told to fill its row (height:100%) rather than
+     just capped with max-height: a percentage max-height on a grid item
+     resolves against that item's OWN grid area, not the outer container —
+     so max-height:42% here would re-apply on top of the already-42% row
+     and squeeze the panel to ~18% of the total (42% of 42%), which is
+     what was actually happening. height:100% fills the row exactly once;
+     the panel's existing internal scroll (.scene-panel-scroll) still
+     handles anything that doesn't fit within it. */
   .teaching-scene{grid-template-columns:1fr;grid-template-rows:minmax(140px,1fr) minmax(0,42%);}
-  .scene-panel{border-inline-start:none;border-top:1px solid var(--border-soft);max-height:42%;}
+  .scene-panel{border-inline-start:none;border-top:1px solid var(--border-soft);height:100%;padding:16px 20px 10px;}
+  /* Tighter than the desktop 34px/20px padding and 14px+8px nav-button gap:
+     on a short viewport every pixel here is taken directly from the
+     scrollable question/answer text below it. */
+  .scene-panel .module-nav-btns{padding-top:8px;margin-top:6px;}
 }
 @media (max-aspect-ratio: 4/3){
   :root{--rail-w:64px;}
