@@ -508,6 +508,17 @@ body.laser-active{cursor:none;}
      on a short viewport every pixel here is taken directly from the
      scrollable question/answer text below it. */
   .scene-panel .module-nav-btns{padding-top:8px;margin-top:6px;}
+  /* #app uses min-height (not height) so content that needs more room than
+     the viewport pushes the body taller and scrolls, rather than being
+     clipped — that's deliberate (see #app's own comment). But some scenes'
+     own content (e.g. an experiment with several rows of play/pause/step/
+     speed controls) is genuinely taller than a ~480px viewport, and header/
+     footer scrolling away with it means losing the module title, the
+     التالي/السابق nav, and the step timeline while scrolling through just
+     one scene. Pinning them keeps navigation reachable regardless of how
+     tall any single scene's content gets. */
+  header.app-header{position:sticky;top:0;}
+  .footer-bar{position:sticky;bottom:0;}
 }
 @media (max-aspect-ratio: 4/3){
   :root{--rail-w:64px;}
