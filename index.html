@@ -490,6 +490,38 @@ body.laser-active{cursor:none;}
 </head>
 <body>
 
+<!-- TEMP DIAGNOSTIC — for tracking down a layout bug reported only on the
+     classroom touch panel (text/experiment panes overlapping instead of
+     sitting side by side). Shows the real viewport metrics that device's
+     browser reports, since that can't be inspected remotely. Tap the badge
+     to dismiss it. Safe to delete once the cause is found. -->
+<div id="__diag" style="position:fixed;top:8px;left:8px;z-index:99999;background:#000;color:#0f0;font:12px/1.4 monospace;padding:10px 14px;border-radius:8px;max-width:92vw;white-space:pre-wrap;direction:ltr;text-align:left;box-shadow:0 4px 20px rgba(0,0,0,.6);" onclick="this.remove()"></div>
+<script>
+(function(){
+  var d = document.getElementById('__diag');
+  function report(){
+    var lines = [
+      'innerWidth x innerHeight: ' + window.innerWidth + ' x ' + window.innerHeight,
+      'outerWidth x outerHeight: ' + window.outerWidth + ' x ' + window.outerHeight,
+      'screen: ' + screen.width + ' x ' + screen.height,
+      'devicePixelRatio: ' + window.devicePixelRatio,
+      'visualViewport: ' + (window.visualViewport ? (window.visualViewport.width+' x '+window.visualViewport.height+' scale='+window.visualViewport.scale) : 'n/a'),
+      'documentElement.clientWidth x Height: ' + document.documentElement.clientWidth + ' x ' + document.documentElement.clientHeight,
+      'CSS Grid support: ' + (CSS.supports('display','grid')),
+      'CSS gap-in-flex support: ' + (CSS.supports('gap','1px')),
+      'CSS aspect-ratio support: ' + (CSS.supports('aspect-ratio','1/1')),
+      'CSS min() support: ' + (CSS.supports('width','min(1px,2px)')),
+      'CSS dvh support: ' + (CSS.supports('height','1dvh')),
+      'userAgent: ' + navigator.userAgent,
+      '(tap to dismiss)'
+    ];
+    d.textContent = lines.join('\n');
+  }
+  report();
+  window.addEventListener('resize', report);
+})();
+</script>
+
 <div id="cosmic-bg" aria-hidden="true">
   <canvas id="starfield"></canvas>
   <div class="bg-haze h1"></div>
