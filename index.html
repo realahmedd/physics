@@ -2,7 +2,35 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script>
+// Some Android interactive-whiteboard panels apply aggressive OS-level
+// display scaling — confirmed on the actual target device: a physical
+// 3840x2160 4K panel reporting a CSS viewport of only ~960x484
+// (devicePixelRatio 4). Chrome then treats this huge screen exactly like a
+// small phone and switches this app to its narrow-viewport layout, even
+// though there is no real space problem — the screen is enormous, it's
+// just being reported at 1/4 scale. A genuine small phone never has this
+// combination (a very high device pixel ratio together with a large
+// physical pixel count — real phones/tablets cap out well below this), so
+// detecting precisely that combination and requesting a fixed-width
+// viewport (the same technique as a browser's own "desktop site" toggle)
+// makes the browser lay the page out exactly as it does on a laptop.
+//
+// This has to be a synchronous document.write() during head parsing, not
+// a later DOM mutation of the <meta viewport> tag: that was tried first
+// and confirmed not to work — Chrome had already committed to the
+// original viewport by the time a script could run and change it
+// (window.innerWidth stayed at 960 even after the tag's content changed).
+// Written this early, before the parser has seen any viewport meta tag at
+// all, it takes effect the same as if it were the original markup.
+(function(){
+  var physicalWidth = (screen.width||0) * (window.devicePixelRatio || 1);
+  var isLargeScaledPanel = /Android/i.test(navigator.userAgent) && physicalWidth >= 2500 && (window.devicePixelRatio||1) >= 3.5;
+  document.write(isLargeScaledPanel
+    ? '<meta name="viewport" content="width=1600, initial-scale=1.0">'
+    : '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">');
+})();
+</script>
 <title>التيارات الدوامة — الأستاذ باقر أنيس العقابي</title>
 <meta name="description" content="تجربة تعليمية تفاعلية عن التيارات الدوامة — الفيزياء، السادس الإعدادي العلمي">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -516,6 +544,17 @@ body.laser-active{cursor:none;}
      on a short viewport every pixel here is taken directly from the
      scrollable question/answer text below it. */
   .scene-panel .module-nav-btns{padding-top:8px;margin-top:6px;}
+  /* #app uses min-height (not height) so content that needs more room than
+     the viewport pushes the body taller and scrolls, rather than being
+     clipped — that's deliberate (see #app's own comment). But some scenes'
+     own content (e.g. an experiment with several rows of play/pause/step/
+     speed controls) is genuinely taller than a ~480px viewport, and header/
+     footer scrolling away with it means losing the module title, the
+     التالي/السابق nav, and the step timeline while scrolling through just
+     one scene. Pinning them keeps navigation reachable regardless of how
+     tall any single scene's content gets. */
+  header.app-header{position:sticky;top:0;}
+  .footer-bar{position:sticky;bottom:0;}
 }
 @media (max-aspect-ratio: 4/3){
   :root{--rail-w:64px;}
@@ -523,6 +562,30 @@ body.laser-active{cursor:none;}
 </style>
 </head>
 <body>
+
+<!-- TEMP DIAGNOSTIC #2 — checking whether the document.write() viewport
+     override (added to fix the classroom touch panel) actually took
+     effect on the real device. Tap to dismiss. Safe to delete once
+     confirmed either way. -->
+<div id="__diag2" style="position:fixed;top:8px;left:8px;z-index:99999;background:#000;color:#0f0;font:12px/1.4 monospace;padding:10px 14px;border-radius:8px;max-width:92vw;white-space:pre-wrap;direction:ltr;text-align:left;box-shadow:0 4px 20px rgba(0,0,0,.6);" onclick="this.remove()"></div>
+<script>
+(function(){
+  var d = document.getElementById('__diag2');
+  var physicalWidth = (screen.width||0) * (window.devicePixelRatio || 1);
+  var heuristicMatched = /Android/i.test(navigator.userAgent) && physicalWidth >= 2500 && (window.devicePixelRatio||1) >= 3.5;
+  d.textContent = [
+    'innerWidth: ' + window.innerWidth,
+    'devicePixelRatio: ' + window.devicePixelRatio,
+    'screen.width: ' + screen.width,
+    'physicalWidth (screen.width*DPR): ' + physicalWidth,
+    'isAndroidUA: ' + /Android/i.test(navigator.userAgent),
+    'heuristicMatched (should force desktop): ' + heuristicMatched,
+    'viewport meta content NOW: ' + document.querySelector('meta[name=viewport]').content,
+    'location.protocol: ' + location.protocol,
+    '(tap to dismiss)'
+  ].join('\n');
+})();
+</script>
 
 <div id="cosmic-bg" aria-hidden="true">
   <canvas id="starfield"></canvas>
